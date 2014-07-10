@@ -1,0 +1,207 @@
+<link href="/stylesheets/htmlDatePicker.css" rel="stylesheet" />
+<link href="/stylesheets/jquery.alerts.css" rel="stylesheet" type="text/css" media="screen" />
+<script language="JavaScript" src="/javascripts/htmlDatePicker.js" type="text/javascript"></script>
+<script language="javascript" type="text/javascript" src="/javascripts/jquery.js"></script>
+<script language="javascript" type="text/javascript">jQuery.noConflict();</script>
+<script language="javascript" type="text/javascript" src="/javascripts/jquery.alerts.js"></script>
+
+<script type="text/javascript"><!--
+    var today = new Date();
+    dateFormat = "d M Y";
+    DisablePast = false;
+    HighlightToday = true
+    DisableNoDateButton = false
+    range_start = new Date(today.getFullYear(),today.getMonth(),8);
+    range_end = new Date(today.getFullYear(),today.getMonth(),5);
+    restrictFuture = 1
+
+    function saveRecord(id){
+
+        var date = document.getElementById(id+"Date").value;
+        var voucher = document.getElementById(id+"Vouc").value;
+        var batch = document.getElementById(id+"Batch").value;
+        var quan_recieved = document.getElementById(id+"QuaRec").value;
+        var quan_issued = document.getElementById(id+"QuaIss").value;
+        var sup_rec = document.getElementById(id+"SupRec").value;
+        verify_record(date, voucher,batch, quan_recieved,quan_issued, sup_rec)
+
+    }
+
+    function activate_next(self_id, next_id)
+    {
+
+        document.getElementById(next_id).disabled = false
+    }
+
+    function deactivate_other(id)
+    {
+
+        if (id.search('QuaRec') != -1)
+        {
+            document.getElementById(id.replace('QuaRec','QuaIss')).disabled = true
+        }
+        else
+        {
+            document.getElementById(id.replace('QuaIss','QuaRec')).disabled = true
+        }
+    }
+
+    function clear_text(id)
+    {
+        var self_control = document.getElementById(id)
+        if(!self_control.disabled)
+        {
+            if (id.search('QuaRec') != -1)
+            {
+                var control = document.getElementById(id.toString().replace('QuaRec','QuaIss'))
+                control.disabled = false
+            }
+            else
+            {
+                var control = document.getElementById(id.toString().replace('QuaIss','QuaRec'))
+                control.disabled = false
+            }
+            self_control.value = ""
+        }
+    }
+
+    function verify_record(date, voucher,batch, recieved, issued, sup_rec)
+    {
+        if (!date || /^\s*$/.test(date))
+        {
+            jAlert("Please provide transaction date", "Incomplete Information")
+            return false ;
+        }
+        else if (!voucher || /^\s*$/.test(voucher))
+        {
+            jAlert("Please provide voucher number", "Incomplete Information")
+            return false ;
+        }
+        else if (!batch || /^\s*$/.test(batch))
+        {
+            jAlert("Please provide batch number", "Incomplete Information")
+            return false ;
+        }
+        else if ((!recieved || /^\s*$/.test(recieved)) && (!issued || /^\s*$/.test(issued)))
+        {
+            jAlert("Please provide quantity issued/received", "Incomplete Information")
+            return false ;
+        }
+        else if (!((!recieved || /^\s*$/.test(recieved)) && (!issued || /^\s*$/.test(issued))))
+        {
+            jAlert("One transaction can not have both quantity issued and received", "Data Verification")
+            return false ;
+        }
+        else if (!sup_rec || /^\s*$/.test(sup_rec))
+        {
+            jAlert("Please provide details of Supplier/Receiving department", "Incomplete Information")
+            return false ;
+        }
+        else if (!(!recieved || /^\s*$/.test(recieved)))
+        {
+            if(!parseFloat(recieved))
+            {
+                jAlert("Quantity received should be a number", "Data Verification")
+                return false ;
+            }
+
+        }
+        else if (!(!issued || /^\s*$/.test(issued)))
+        {
+            if(!parseFloat(issued))
+            {
+                jAlert("Quantity issued should be a number", "Data Verification")
+                return false ;
+            }
+
+        }
+    }
+
+    function deleteRecord(id){
+        jConfirm("Are you sure you want to void this record? ","Confirmation Dialog",function(r)
+        {
+            /*
+            if (r)
+            {
+                var voucher = document.getElementById(id+"Vouc").value
+                jQuery.ajax({
+                    url:  "/stock_details/void?voucher=" + voucher ,
+                    type:"POST",
+                    success: function(msg){
+                        jAlert(msg, "Void Outcome")
+                        var table = document.getElementById("records")
+
+                    },
+                    error: function(){
+                        jAlert("Could not void recorded", "Unsuccessful!");
+                    }
+
+                });
+            }*/
+            jAlert(id);
+        })
+    }
+-->
+</script>
+<style>
+  td.sample{
+      border: 1px solid #000000;
+      padding-left: 4px;
+      font-size: 150%;
+  }
+  .tbody-data tr, td{
+
+    font-family: "Nimbus Sans L","Arial Narrow",sans-serif;
+    font-size: 130%;
+  }
+  input{
+      font-family: "Nimbus Sans L","Arial Narrow",sans-serif;
+      font-size: 100%;
+      margin-left: 2%;
+  }
+  img.clear{
+      height: 40px;
+      width:50px;
+      vertical-align: bottom;
+  }
+</style>
+
+<div style = "width: 100%;">
+    <h1 style="font-family: Nimbus Sans L;"> <%= @product.product_code %> : <%= @product.name %> </h1>
+
+  <table id ="records" border="1" style="border-collapse: collapse;width: 99%;margin-right: auto; margin-left: auto">
+    <thead>
+        <tr style="background-color: #C1DAD6">
+          <td class="sample">Date</td>
+          <td class="sample">Voucher To/From </td>
+          <td class="sample">Batch No </td>
+          <td class="sample">Quantity Received </td>
+          <td class="sample">Quantity Issued </td>
+          <td class="sample">Supplier/Receiver </td>
+          <td class="sample">Action</td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="tbody-data">
+          <td >
+            <input id="tr1Date" type="text" name="SelectedDate" id="SelectedDate" on="activate_next(this.id, 'tr1Vouc')" onClick="GetDate(this)" />
+          </td>
+          <td ><input id="tr1Vouc" disabled="disabled" type="text" oninput="activate_next(this.id, 'tr1Batch')"></td>
+          <td ><input id="tr1Batch" disabled="disabled"  type="text" oninput="activate_next(this.id, 'tr1QuaRec')"></td>
+          <td >
+            <input id="tr1QuaRec" disabled="disabled" type="text" oninput="activate_next(this.id, 'tr1QuaIss');deactivate_other(this.id)">
+            <img class="clear" src="/images/edit_clear.png" onclick="clear_text('tr1QuaRec')">
+          </td>
+          <td >
+            <input id="tr1QuaIss" disabled="disabled" type="text" oninput="activate_next(this.id, 'tr1SupRec');deactivate_other(this.id)">
+            <img class="clear" src="/images/edit_clear.png" onclick="clear_text('tr1QuaIss')">
+          </td>
+          <td ><input id="tr1SupRec" disabled="disabled" type="text"></td>
+          <td >
+            <img id= "tr1" style="height: 50px;" onclick="deleteRecord(this.id)" src="/images/close_delete.png">
+            <img id= "tr1" style="height: 50px;" onclick="saveRecord(this.id)" src="/images/document_save.png">
+          </td>
+        </tr>
+    </tbody>
+  </table>
+</div>

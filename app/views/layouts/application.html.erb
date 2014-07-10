@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ePICS BDE Tool</title>
+  <%= stylesheet_link_tag :all %>
+  <%= javascript_include_tag :defaults %>
+  <%= csrf_meta_tag %>
+  <style>
+      body, div {
+          color: #000;
+          font-family: "Nimbus Sans L","Arial Narrow",sans-serif;
+      }
+  </style>
+</head>
+<body>
+  <div style="height: 11vh; overflow: hidden; border-bottom: 1px solid #5496ef;width: 100%;">
+    <img style="height: 10vh;text-align: right;" src="/images/app.png">
+  </div>
+  <div id="content" style="height:80vh;overflow: auto;">
+    <%= yield %>
+  </div>
+
+
+  <div style="bottom:0; top: auto; position: fixed;height: 9vh; overflow: hidden; border-top: 1px solid #5496ef;width: 100%;">
+    <table style="width: 100%">
+      <tr>
+        <td style="font-size: 25px;font-weight: bold;color: #708090;padding-left: 20px;">
+          User : <%= User.current.username %>
+        </td>
+        <td style="font-size: 25px;font-weight: bold;color: #708090;">
+          Location : <%= session[:location_name] %>
+        </td>
+        <td id ="custom">
+
+        </td>
+        <td>
+
+          <img id="option" src="/images/okay.jpeg" height="65" style="margin-right: 40px; position: relative;
+                  top: -0px; margin-top: 10px; cursor: pointer; float: right;" onclick="window.location='/'" />
+        </td>
+    </table>
+  </div>
+</body>
+</html>

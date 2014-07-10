@@ -1,0 +1,224 @@
+<html>
+<head>
+  <title>Home</title>
+  <style type="text/css">
+      body {
+          background-color: #fff;
+          margin: 20px;
+          font-family: "Nimbus Sans L", "Arial Narrow", sans-serif;
+          overflow: hidden;
+          color: #000;
+          -moz-user-select: none;
+      }
+
+      .buttons-table td {
+          text-align: center;
+      }
+
+      .buttons-table img {
+          width: 128px;
+          height: 128px;
+      }
+
+      #shadow, #question {
+          -moz-user-select: none;
+      }
+
+      div {
+          -moz-user-select: none;
+      }
+  </style>
+
+  <%= stylesheet_link_tag "disable_page" %>
+  <%= javascript_include_tag "disable_page"%>
+  <%= javascript_include_tag "cookies"%>
+
+  <script type="text/javascript">
+      setTimeout("setCookie();",300)
+      <!--
+
+              function __$(id){
+                  return document.getElementById(id);
+              }
+
+      function switchTab(tab){
+          var tabs = ["application", "reports", "my_activities", "administration"];
+
+          for(var i = 0; i < tabs.length; i++){
+              __$(tabs[i]).style.borderBottom = "1px solid #5496ef";
+              __$(tabs[i]).style.paddingTop = "60px";
+          }
+
+          __$(tab).style.borderBottom = "5px solid #5496ef";
+          __$(tab).style.paddingTop = "65px";
+
+          switch(tab.toLowerCase()){
+              case "application":
+                  loadApplicationMenu();
+                  break;
+              case "reports":
+                  loadReportsMenu();
+                  break;
+              case "my_activities":
+                  loadActivitiesMenu();
+                  break;
+              case "administration":
+                  loadAdministrationMenu();
+                  break;
+          }
+      }
+
+      function adjustView(){
+      }
+
+      function loadAdministrationMenu(){
+          resetButtonsTable();
+          <%
+      count = 0
+      (@administration || []).each do |name,path,image|%>
+          b = document.getElementById('button'+(<%=count+=1%>));
+          b.innerHTML = '<div style="width: 200px; text-align: center; padding: 10px;">';
+          b.innerHTML += "<a href='<%=path%>'><img src='images/<%=image%>' /></a>";
+          b.innerHTML += '<div>' + "<%=name%>" + '</div></a></div>'
+          <%end%>
+      }
+
+      function loadApplicationMenu(){
+          resetButtonsTable();
+          <%
+      count = 0
+      (@application || []).each do |name,path,image|%>
+          b = document.getElementById('button'+(<%=count+=1%>));
+          b.innerHTML = '<div style="width: 200px; text-align: center; padding: 10px;">';
+          b.innerHTML += '<a href="<%=path%>"><img src="images/<%=image%>" /></a>';
+          b.innerHTML += '<div>' + "<%=name%>" + '</div></a></div>'
+          <%end%>
+      }
+
+      function loadReportsMenu(){
+          resetButtonsTable();
+          <%
+      count = 0
+      (@reports || []).each do |name,path,image|%>
+          b = document.getElementById('button'+(<%=count+=1%>));
+          b.innerHTML = '<div style="width: 200px; text-align: center; padding: 10px;">';
+          b.innerHTML += '<a href="<%=path%>"><img src="images/<%=image%>" /></a>';
+          b.innerHTML += '<div>' + "<%=name%>" + '</div></a></div>'
+          <%end%>
+      }
+
+      function loadActivitiesMenu(){
+          resetButtonsTable();
+          <%
+      count = 0
+      (@activities || []).each do |name,path,image|%>
+          b = document.getElementById('button'+(<%=count+=1%>));
+          b.innerHTML = '<div style="width: 200px; text-align: center; padding: 10px;">';
+          b.innerHTML += '<a href="<%=path%>"><img src="images/<%=image%>" /></a>';
+          b.innerHTML += '<div>' + "<%=name%>" + '</div></a></div>'
+          <%end%>
+      }
+
+      function resetButtonsTable() {
+          var t = document.getElementsByClassName('buttons-table')[0];
+          var tds = t.getElementsByTagName("td");
+          for(var i=0;i<tds.length;i++) {
+              tds[i].innerHTML = null;
+          }
+      }
+
+      //-->
+
+      function switchToActiveTab(){
+          active_tab = readCookie('active-tab');
+          if (active_tab){
+              switchTab(active_tab)
+          }
+          else{
+              loadApplicationMenu();
+          }
+
+      }
+  </script>
+</head>
+
+<body onresize="adjustView()" onload="adjustView(); switchToActiveTab();">
+<table id="parent_table" width="100%" cellspacing="0" cellpadding="10">
+  <tr id="main-menu">
+    <td id="application" style="border-bottom: 5px solid #5496ef; font-size: 18px;
+            padding-top: 65px; width: 100px; cursor: pointer;" align="center"
+        onclick="switchTab(this.id)">
+      Application
+    </td>
+    <td id="reports" style="border-bottom: 1px solid #5496ef; font-size: 18px;
+            padding-top: 60px; width: 80px; cursor: pointer;" align="center"
+        onclick="switchTab(this.id)">
+      Reports
+    </td>
+    <td id="my_activities" style="border-bottom: 1px solid #5496ef; font-size: 18px;
+            padding-top: 60px; width: 110px; cursor: pointer;" align="center"
+        onclick="switchTab(this.id)">
+      My Activities
+    </td>
+    <td id="administration" style="border-bottom: 1px solid #5496ef; font-size: 18px;
+            padding-top: 60px; width: 130px; cursor: pointer;" align="center"
+        onclick="switchTab(this.id)">
+      Administration
+    </td>
+    <td style="border-bottom: 1px solid #5496ef;">
+      &nbsp;
+    </td>
+    <td style="width: 100px; border-bottom: 1px solid #5496ef;">
+      <img src="/images/<%= (File.exists?("#{Rails.root}/public/images/app.png") ?
+              "app.png" : "baobab.png") %>" height="80" style="float: right;" />
+    </td>
+  </tr>
+  <tr>
+    <td colspan="6" style="padding: 0px;">
+      <div id="container" style="width: 100%; height: 540px; overflow: auto;">
+
+        <table style="width:100%" class="buttons-table">
+          <%
+             count = 0
+             1.upto(@buttons_count).each do |number|%>
+              <tr>
+                <td id='button<%=count+=1%>'></td>
+                <td id='button<%=count+=1%>'></td>
+                <td id='button<%=count+=1%>'></td>
+              </tr>
+          <%end%>
+        </table>
+
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="6" style="border-top: 1px solid #5496ef;">
+      &nbsp;
+    </td>
+  </tr>
+</table>
+
+<div id="nav" style="width: 100%; height: 90px;
+        left: 0px; position: absolute; bottom: 0px;">
+  <table style="width: 100%" >
+    <tr>
+      <td style="font-size: 25px;font-weight: bold;color: #708090;padding-left: 20px;">
+        User : <%= User.current.username %>
+      </td>
+      <td style="font-size: 25px;font-weight: bold;color: #708090;">
+        Location : <%= session[:location_name] %>
+      </td>
+
+      <td>
+        <img src="/images/Log-Out-icon.png" height="65" style="margin-right: 20px;
+                margin-top: 0px; cursor: pointer; float: right;" onclick="window.location='/logout'" />
+      </td>
+
+    </tr>
+  </table>
+</div>
+
+
+</body>
+</html>

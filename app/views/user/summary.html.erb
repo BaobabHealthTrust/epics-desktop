@@ -1,0 +1,109 @@
+<%= render :partial => '/layouts/top' %>
+<style>
+    h1 { padding-left:10px; }
+
+    .user_info {
+
+        border-bottom: 1px solid black;
+        border-top: 1px solid black;
+        margin-top: 1px;
+        font-size:25px;
+    }
+
+    .userdata {
+        background: none repeat scroll 0 0 white;
+
+        width: 100%;
+    }
+
+    .userdata td, .userdata th {
+        border-width: 0px;
+        border-style:solid;
+        height: 65px;
+    }
+
+    th { text-align:left; }
+
+    .blue { background-color:#E6E6FF; }
+
+    .user_info button {
+        margin-top: 10px;
+        font-size: 1.2em;
+        font-weight: bold;
+        margin: 0 4px;
+        float:right;
+    }
+
+    #button_container button {
+        font-size: 15px;
+        width: 235px;
+    }
+
+  .buttons {
+        background-color: grey;
+        border-bottom: 1px outset #EEEEEE;
+        border-style: outset;
+        border-top: 1px outset #EEEEEE;
+        color: white;
+        display: block;
+        padding: 10px;
+        text-align: center;
+        text-decoration: none;
+        background-color: rgb(0, 116, 204);
+        background-image: -moz-linear-gradient(center top , rgb(0, 136, 204), rgb(0, 85, 204));
+        background-repeat: repeat-x;
+        border-bottom-color: rgba(0, 0, 0, 0.25);
+        border-left-color-ltr-source: physical;
+        border-left-color-rtl-source: physical;
+        border-left-color-value: rgba(0, 0, 0, 0.1);
+        border-right-color-ltr-source: physical;
+        border-right-color-rtl-source: physical;
+        border-right-color-value: rgba(0, 0, 0, 0.1);
+        border-top-color: rgba(0, 0, 0, 0.1);
+        font-size: 1.3em;
+    }
+
+</style>
+<div style="font-size: 25px;font-weight: bold">
+  <br />
+  User Details
+  <br />
+
+  <div class = 'user_info'>
+    <table class = 'userdata'>
+      <tr>
+        <th class='blue'>Username:&nbsp;</th>
+        <td class='blue'>&nbsp;<%=@user.username%></td>
+        <td class='blue'>
+          <img src="/images/edit.png" height="65" style="float: right;" onmousedown="window.location='/user/change_username?user_id=<%= @user_id %>'">
+        </td>
+      </tr>
+      <tr>
+        <th>Role:&nbsp;</th>
+        <td>&nbsp;<%=@user.epics_user_role.epics_role.role%></td>
+        <td >
+          <% if @user.epics_user_role.epics_role.role == "Administrator" %>
+            <img src="/images/edit.png" height="65" style="float: right;" onmousedown="window.location='/user/change_user_role?user_id=<%= @user_id %>'">
+          <%end%>
+        </td>
+      </tr>
+      <tr>
+        <th class='blue'>First name:&nbsp;</th>
+        <td class='blue'>&nbsp;<%=@user.openmrs_person.openmrs_person_names.last.given_name%></td>
+        <td class='blue'>&nbsp;</td>
+      </tr>
+      <tr>
+        <th>Last name:&nbsp;</th>
+        <td>&nbsp;<%=@user.openmrs_person.openmrs_person_names.last.family_name%></td>
+        <td >&nbsp;</td>
+      </tr>
+      <tr>
+        <th class='blue'>Date created:&nbsp;</th>
+        <td class='blue'>&nbsp;<%=@user.date_created.strftime('%A  %d, %B, %Y') rescue '&nbsp;'%></td>
+        <td class='blue'>&nbsp;</td>
+      </tr>
+    </table>
+  </div>
+    <br>
+    <a onmousedown="window.location='/user/change_password?user_id=<%= @user_id %>'" class="buttons">Change Password</a>
+</div>

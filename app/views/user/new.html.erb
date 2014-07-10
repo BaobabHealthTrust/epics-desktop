@@ -1,0 +1,53 @@
+
+<script type='text/javascript'><!--
+
+tt_cancel_show='/'
+tt_cancel_destination='/'
+
+//-->
+</script>
+
+<%= form_tag :action => 'create', :method => :post  do %>
+
+
+    <%= text_field_tag :fname, nil,
+                       {:id => 'first_name',
+                        :field_type => 'alpha',
+                        :ajaxURL => '/person/get_name?search_string=',
+                        :allowFreeText => true,
+                        :helpText => 'Enter first name'} %>
+
+
+    <%= text_field_tag :lname, nil,
+                       {:id => 'last_name',
+                        :field_type => 'alpha',
+                        :ajaxURL => '/person/get_name?search_string=',
+                        :allowFreeText => true,
+                        :helpText => 'Enter last name'} %>
+
+    <%= text_field_tag :username, nil,
+                       {:id => 'username',
+                        :field_type => 'alpha',
+                        :textCase => "lower",
+                        :allowFreeText => true,
+                        :helpText => 'Enter user name'} %>
+
+    <%= select_tag :role, options_for_select(@roles),
+                   { :id => 'role',
+                     :field_type => 'alpha',
+                     :helpText => 'User Role'} %>
+
+    <%= password_field_tag(:password, nil, :helpText => "Enter password",
+                           :textCase => "lower", :field_type => "password",
+                           :validationRule => "\\w{4}\\w*", :validationMessage => "Password less than six characters",
+                           :tt_onLoad => "barcodeId = 'touchscreenInput1';") %>
+
+    <%= password_field_tag(:password2, nil, :helpText => "Re-enter password",
+                           :textCase => "lower", :field_type => "password",
+                           :validationRule => "\\w{4}\\w*", :validationMessage => "Password less than six characters",
+                           :tt_onLoad => "barcodeId = 'touchscreenInput1';") %>
+
+    <%= submit_tag "Create person" %>
+
+
+<% end %>
