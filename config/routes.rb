@@ -7,7 +7,7 @@ EpicsBdeTool::Application.routes.draw do
   get "product/find_by_name_or_code"
   get "product/data_entry"
   post "product/data_entry"
-  get "product/save_transaction"
+  post "product/save_transaction"
 
   get "home/index"
 

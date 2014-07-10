@@ -15,50 +15,96 @@
     range_end = new Date(today.getFullYear(),today.getMonth(),5);
     restrictFuture = 1
 
-    function saveRecord(id){
+    function saveRecord(id_long){
 
+        var id = id_long.replace('Save', '')
         var date = document.getElementById(id+"Date").value;
         var voucher = document.getElementById(id+"Vouc").value;
         var batch = document.getElementById(id+"Batch").value;
         var quan_recieved = document.getElementById(id+"QuaRec").value;
         var quan_issued = document.getElementById(id+"QuaIss").value;
         var sup_rec = document.getElementById(id+"SupRec").value;
-        verify_record(date, voucher,batch, quan_recieved,quan_issued, sup_rec)
+
+        if (verify_record(date, voucher,batch, quan_recieved,quan_issued, sup_rec))
+        {
+            var data = "record[date]=" + date;
+            data += "&record[voucher]=" + voucher;
+            data += "&record[batch]=" + batch;
+            data += "&record[recieved]=" + quan_recieved;
+            data += "&record[issued]=" + quan_issued;
+            data += "&record[interactor]=" + sup_rec;
+            data += "&record[item]=" + '<%= @product.name %>;'
+
+            jQuery.ajax({
+                type: "POST",
+                url: "/product/save_transaction",
+                data: data,
+                success: function(){
+                    jAlert("Record added successfully", "Success")
+                    freeze_row(id)
+                    add_row()
+                    document.getElementById(id_long).style.display ='none'
+                }
+
+            });
+        }
 
     }
 
-    function activate_next(self_id, next_id)
+    function activate_next(next_id)
     {
 
         document.getElementById(next_id).disabled = false
     }
 
-    function deactivate_other(id)
+    function deactivate_other(id, list)
     {
-
-        if (id.search('QuaRec') != -1)
+        var drop_down = document.getElementById(list);
+        drop_down.options.length = 0;
+        if (id.search('Vouc') != -1)
         {
-            document.getElementById(id.replace('QuaRec','QuaIss')).disabled = true
+            document.getElementById(id.replace('Vouc','QuaIss')).disabled = true
+            <% (@suppliers || [] ).each do |supplier| %>
+            var option = document.createElement("option");
+            option.text = "<%= supplier %>";
+            option.value = "<%= supplier %>";
+            option.title = "<%= supplier %>";
+            drop_down.add(option);
+            <% end %>
+
         }
         else
         {
-            document.getElementById(id.replace('QuaIss','QuaRec')).disabled = true
+            document.getElementById(id.replace('QuaIss','Vouc')).disabled = true
+            <% (@receivers || []).each do |receiver| %>
+            var option = document.createElement("option");
+
+            option.text = "<%= receiver %>";
+            option.value = "<%= receiver %>";
+            option.title = "<%= receiver %>";
+            drop_down.add(option);
+            <% end %>
+
         }
     }
 
-    function clear_text(id)
+    function clear_text(id, list)
     {
         var self_control = document.getElementById(id)
+        document.getElementById(list).disabled = true
+
         if(!self_control.disabled)
         {
             if (id.search('QuaRec') != -1)
             {
                 var control = document.getElementById(id.toString().replace('QuaRec','QuaIss'))
+                document.getElementById(id.toString().replace('QuaRec','Batch')).disabled = true
+                self_control.disabled = true
                 control.disabled = false
             }
             else
             {
-                var control = document.getElementById(id.toString().replace('QuaIss','QuaRec'))
+                var control = document.getElementById(id.toString().replace('QuaIss','Vouc'))
                 control.disabled = false
             }
             self_control.value = ""
@@ -67,6 +113,7 @@
 
     function verify_record(date, voucher,batch, recieved, issued, sup_rec)
     {
+
         if (!date || /^\s*$/.test(date))
         {
             jAlert("Please provide transaction date", "Incomplete Information")
@@ -87,7 +134,7 @@
             jAlert("Please provide quantity issued/received", "Incomplete Information")
             return false ;
         }
-        else if (!((!recieved || /^\s*$/.test(recieved)) && (!issued || /^\s*$/.test(issued))))
+        else if (recieved && issued)
         {
             jAlert("One transaction can not have both quantity issued and received", "Data Verification")
             return false ;
@@ -113,33 +160,147 @@
                 jAlert("Quantity issued should be a number", "Data Verification")
                 return false ;
             }
-
         }
+
+        return true
+
     }
 
-    function deleteRecord(id){
+    function deleteRecord(node){
+
         jConfirm("Are you sure you want to void this record? ","Confirmation Dialog",function(r)
         {
-            /*
+
             if (r)
             {
-                var voucher = document.getElementById(id+"Vouc").value
+                var voucher = document.getElementById(node.id.replace("Delete", "Vouc")).value
                 jQuery.ajax({
                     url:  "/stock_details/void?voucher=" + voucher ,
                     type:"POST",
                     success: function(msg){
                         jAlert(msg, "Void Outcome")
                         var table = document.getElementById("records")
-
+                        table.deleteRow(node.getAttribute("row_count"))
                     },
                     error: function(){
-                        jAlert("Could not void recorded", "Unsuccessful!");
+                        jAlert("Record could not be voided", "Unsuccessful!");
                     }
 
                 });
-            }*/
-            jAlert(id);
+            }
         })
+    }
+
+    function add_row()
+    {
+        var table = document.getElementById("records")
+        var row = document.createElement('tr')
+        var id = 'tr'+table.rows.length
+        row.setAttribute('id', table.rows.length)
+        row.setAttribute('class', "tbody-data")
+
+        var date_cell = document.createElement("td")
+        var date_input = document.createElement("input")
+
+        date_input.setAttribute('type', 'text')
+        date_input.setAttribute('name', id+'Date')
+        date_input.setAttribute('id', id+'Date')
+        date_input.setAttribute('onClick', "GetDate(this);activate_next('"+id+"Vouc')")
+        date_cell.appendChild(date_input)
+        row.appendChild(date_cell)
+
+        var voucher_cell = document.createElement("td")
+        var voucher_input = document.createElement("input")
+
+        voucher_input.setAttribute("id", id+"Vouc")
+        voucher_input.setAttribute("type", "text")
+        voucher_input.setAttribute("oninput","activate_next('"+id+"Batch')" )
+        voucher_input.disabled = true
+        voucher_cell.appendChild(voucher_input)
+        row.appendChild(voucher_cell)
+
+
+        var batch_cell = document.createElement("td")
+        var batch_input = document.createElement("input")
+
+        batch_input.setAttribute("id", id+"Batch")
+        batch_input.setAttribute("type", "text")
+        batch_input.setAttribute("oninput","activate_next('"+id+"QuaRec');activate_next('"+id+"QuaIss')")
+        batch_input.disabled = true
+        batch_cell.appendChild(batch_input)
+        row.appendChild(batch_cell)
+
+        var received_cell = document.createElement("td")
+        var received_input = document.createElement("input")
+        var received_clear = document.createElement("img")
+
+        received_input.setAttribute("id", id+"QuaRec")
+        received_input.setAttribute("type", "text")
+        received_input.setAttribute("oninput","activate_next('"+id+"SupRec');deactivate_other(this.id,'"+id+"SupRec')")
+        received_input.disabled = true
+        received_clear.setAttribute('class', 'clear')
+        received_clear.setAttribute('src', '/images/edit_clear.png')
+        received_clear.setAttribute('onClick', "clear_text('"+id + "QuaRec','"+ id +"SupRec')")
+        received_cell.appendChild(received_input)
+        received_cell.appendChild(received_clear)
+        row.appendChild(received_cell)
+
+        var issued_cell = document.createElement("td")
+        var issued_input = document.createElement("input")
+        var issued_clear = document.createElement("img")
+
+        issued_input.setAttribute("id", id+"QuaIss")
+        issued_input.setAttribute("type", "text")
+        issued_input.setAttribute("oninput","activate_next('"+id+"SupRec'); deactivate_other(this.id,'"+id+"SupRec')")
+        issued_input.disabled = true
+        issued_clear.setAttribute('class', 'clear')
+        issued_clear.setAttribute('src', '/images/edit_clear.png')
+        issued_clear.setAttribute('onClick', "clear_text('"+id + "QuaIss','"+ id +"SupRec')")
+        issued_cell.appendChild(issued_input)
+        issued_cell.appendChild(issued_clear)
+        row.appendChild(issued_cell)
+
+        var supRec_cell = document.createElement("td")
+        var supRec_input = document.createElement("select")
+
+        supRec_input.setAttribute("id", id+"SupRec")
+        supRec_input.setAttribute("type", 'text')
+        supRec_input.setAttribute("class", 'options')
+        supRec_input.setAttribute("oninput","activate_next('"+id+"QuaRec');activate_next('"+id+"QuaIss')")
+        supRec_input.disabled = true
+        supRec_cell.appendChild(supRec_input)
+        row.appendChild(supRec_cell)
+
+        var action_cell = document.createElement("td")
+
+        var remove_button = document.createElement("img")
+        remove_button.setAttribute('id', id+'Delete')
+        remove_button.setAttribute('row_count', table.rows.length )
+        remove_button.setAttribute('src', '/images/close_delete.png')
+        remove_button.setAttribute('onClick', "deleteRecord(this)")
+        remove_button.style.height = "50px"
+        action_cell.appendChild(remove_button)
+
+        var save_button = document.createElement("img")
+        save_button.setAttribute('id', id+'Save')
+        save_button.setAttribute('src', '/images/document_save.png')
+        save_button.setAttribute('onClick', "saveRecord(this.id)")
+        save_button.style.height = "50px"
+        action_cell.appendChild(save_button)
+
+        row.appendChild(action_cell)
+        table.appendChild(row)
+    }
+
+    function freeze_row(id)
+    {
+        document.getElementById(id+"Date").disabled = true;
+        document.getElementById(id+"Vouc").disabled = true;
+        document.getElementById(id+"Batch").disabled = true;
+        document.getElementById(id+"QuaRec").disabled = true;
+        document.getElementById(id+"QuaIss").disabled = true;
+        document.getElementById(id+"SupRec").disabled = true;
+
     }
 -->
 </script>
@@ -164,6 +325,10 @@
       width:50px;
       vertical-align: bottom;
   }
+  select.options{
+      width: 200px;
+      font-size: 130%;
+  }
 </style>
 
 <div style = "width: 100%;">
@@ -172,7 +337,7 @@
   <table id ="records" border="1" style="border-collapse: collapse;width: 99%;margin-right: auto; margin-left: auto">
     <thead>
         <tr style="background-color: #C1DAD6">
-          <td class="sample">Date</td>
+          <td class="sample">Transaction Date</td>
           <td class="sample">Voucher To/From </td>
           <td class="sample">Batch No </td>
           <td class="sample">Quantity Received </td>
@@ -182,24 +347,31 @@
         </tr>
     </thead>
     <tbody>
-        <tr class="tbody-data">
+        <tr id="1" class="tbody-data">
           <td >
-            <input id="tr1Date" type="text" name="SelectedDate" id="SelectedDate" on="activate_next(this.id, 'tr1Vouc')" onClick="GetDate(this)" />
+            <input id="tr1Date" type="text" name="SelectedDate" onClick="GetDate(this);
+                    activate_next('tr1Vouc');activate_next('tr1QuaIss')" />
           </td>
-          <td ><input id="tr1Vouc" disabled="disabled" type="text" oninput="activate_next(this.id, 'tr1Batch')"></td>
-          <td ><input id="tr1Batch" disabled="disabled"  type="text" oninput="activate_next(this.id, 'tr1QuaRec')"></td>
+          <td ><input id="tr1Vouc" disabled="disabled" type="text" oninput="activate_next('tr1Batch');deactivate_other(this.id,'tr1SupRec')"></td>
+          <td ><input id="tr1Batch" disabled="disabled"  type="text" oninput="activate_next('tr1QuaRec')"></td>
           <td >
-            <input id="tr1QuaRec" disabled="disabled" type="text" oninput="activate_next(this.id, 'tr1QuaIss');deactivate_other(this.id)">
-            <img class="clear" src="/images/edit_clear.png" onclick="clear_text('tr1QuaRec')">
+            <input id="tr1QuaRec" disabled="disabled" type="text" oninput="activate_next('tr1SupRec')">
+            <img class="clear" src="/images/edit_clear.png" onclick="clear_text('tr1QuaRec','tr1SupRec')">
           </td>
           <td >
-            <input id="tr1QuaIss" disabled="disabled" type="text" oninput="activate_next(this.id, 'tr1SupRec');deactivate_other(this.id)">
-            <img class="clear" src="/images/edit_clear.png" onclick="clear_text('tr1QuaIss')">
+            <input id="tr1QuaIss" disabled="disabled" type="text" oninput="activate_next('tr1SupRec');deactivate_other(this.id,'tr1SupRec')">
+            <img class="clear" src="/images/edit_clear.png" onclick="clear_text('tr1QuaIss', 'tr1SupRec')">
           </td>
-          <td ><input id="tr1SupRec" disabled="disabled" type="text"></td>
           <td >
-            <img id= "tr1" style="height: 50px;" onclick="deleteRecord(this.id)" src="/images/close_delete.png">
-            <img id= "tr1" style="height: 50px;" onclick="saveRecord(this.id)" src="/images/document_save.png">
+            <select class="options" id="tr1SupRec" disabled="disabled" type="text">
+              <% (@receivers || []).each do |receiver| %>
+                  <option value="<%= receiver %>" title=<%= receiver %>><%= receiver %></option>
+              <% end %>
+            </select>
+          </td>
+          <td >
+            <img id= "tr1Delete" style="height: 50px;" row_count="1" onclick="deleteRecord(this)" src="/images/close_delete.png">
+            <img id= "tr1Save" style="height: 50px;" onclick="saveRecord(this.id)" src="/images/document_save.png">
           </td>
         </tr>
     </tbody>
