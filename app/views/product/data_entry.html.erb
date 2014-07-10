@@ -33,7 +33,7 @@
             data += "&record[recieved]=" + quan_recieved;
             data += "&record[issued]=" + quan_issued;
             data += "&record[interactor]=" + sup_rec;
-            data += "&record[item]=" + '<%= @product.name %>;'
+            data += "&record[item]=" + "<%= @product.name %>";
 
             jQuery.ajax({
                 type: "POST",
