@@ -56,15 +56,25 @@
 
             if (facilities.member(sup_rec))
             {
-                current_row = id_long
-                current_row_type = isReciept
-                showPopup()
+
+//                current_row = id_long
+//                current_row_type = isReciept
+//                showPopup()
+
+                jConfirm("Is this a donation? ","Confirmation Dialog", function(r){
+                    if (r)
+                    {
+                        data += "&record[transaction]=" + "Donate"
+                        post_record(data, id_long)
+                    }
+
+                })
             }
             else
             {
                 if (isReciept == "false")
                 {
-                    data += "&record[transaction]=" + "dispense"
+                    data += "&record[transaction]=" + "Dispense"
                 }
                 else
                 {
@@ -89,7 +99,7 @@
         data += "&record[interactor]=" + document.getElementById(id+"SupRec").value;
         data += "&record[isReceipt]=" + current_row_type;
         data += "&record[item]=" + "<%= @product.name %>";
-        data += "&record[type]=" + type;
+        data += "&record[transaction]=" + type;
         post_record(data,current_row)
         current_row = ""
         current_row_type = ""
@@ -259,7 +269,6 @@
 
         jConfirm("Are you sure you want to void this record? ","Confirmation Dialog",function(r)
         {
-
             if (r)
             {
                 var voucher = document.getElementById(node.id.replace("Delete", "Vouc")).value

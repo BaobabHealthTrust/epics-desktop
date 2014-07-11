@@ -34,6 +34,8 @@
 		overlayColor: '#FFF',               // base color of overlay
 		draggable: true,                    // make the dialogs draggable (requires UI Draggables plugin)
 		okButton: '&nbsp;OK&nbsp;',         // text for the OK button
+        yesButton: '&nbsp;Yes&nbsp;',         // text for the yes button
+        noButton: '&nbsp;No&nbsp;', // text for the NO button
 		cancelButton: '&nbsp;Cancel&nbsp;', // text for the Cancel button
 		dialogClass: null,                  // if specified, this class will be applied to all dialogs
 		
@@ -112,7 +114,7 @@
 					});
 				break;
 				case 'confirm':
-					$("#popup_message").after('<div id="popup_panel"><input style="width: 40%"  type="button" value="' + $.alerts.okButton + '" id="popup_ok" /> <input style="width:40% "  type="button" value="' + $.alerts.cancelButton + '" id="popup_cancel" /></div>');
+					$("#popup_message").after('<div id="popup_panel"><input style="width: 40%"  type="button" value="' + $.alerts.yesButton + '" id="popup_ok" /> <input style="width:40% "  type="button" value="' + $.alerts.noButton + '" id="popup_cancel" /></div>');
 					$("#popup_ok").click( function() {
 						$.alerts._hide();
 						if( callback ) callback(true);

@@ -28,31 +28,36 @@ class ProductController < ApplicationController
 
       product = EpicsProduct.find_by_name(params[:record]['item'])
 
-      stock = EpicsStock.new()
-      stock.grn_date = params[:record]['date']
-      stock.invoice_number = params[:record]['voucher']
-      stock.epics_supplier_id = EpicsSupplier.find_by_name(params[:record]['interactor']).id
-      stock.save!
+      supplier =  (params[:record]['transaction'] != "receipt") ? "Other" : params[:record]['interactor']
 
-      witness = EpicsWitnessNames.new
-      witness.epics_stock_id = stock.epics_stock_id
-      witness.name = "Administrator"
-      witness.save!
+      EpicsStock.transaction do
+        stock = EpicsStock.new()
+        stock.grn_date = params[:record]['date']
+        stock.invoice_number = params[:record]['voucher']
+        stock.epics_supplier_id = EpicsSupplier.find_by_name(supplier).id
+        stock.save!
 
-      stock_detail = EpicsStockDetails.new()
-      stock_detail.epics_stock_id = stock.epics_stock_id
-      stock_detail.epics_products_id = product.id
-      stock_detail.epics_location_id = session[:location_id]
-      stock_detail.received_quantity = params[:record]['received']
-      stock_detail.current_quantity = params[:record]['received']
-      stock_detail.batch_number = params[:record]['batch']
-      stock_detail.epics_product_units_id = product.epics_product_units_id
-      stock_detail.save!
+        witness = EpicsWitnessNames.new
+        witness.epics_stock_id = stock.epics_stock_id
+        witness.name = "Administrator"
+        witness.save!
 
-      stock_expiry_dates = EpicsStockExpiryDates.new()
-      stock_expiry_dates.epics_stock_details_id = stock_detail.epics_stock_details_id
-      stock_expiry_dates.expiry_date = params[:record]['date'].to_date + 1.year
-      stock_expiry_dates.save!
+        stock_detail = EpicsStockDetails.new()
+        stock_detail.epics_stock_id = stock.epics_stock_id
+        stock_detail.epics_products_id = product.id
+        stock_detail.epics_location_id = session[:location_id]
+        stock_detail.received_quantity = params[:record]['received']
+        stock_detail.current_quantity = params[:record]['received']
+        stock_detail.batch_number = params[:record]['batch']
+        stock_detail.epics_product_units_id = product.epics_product_units_id
+        stock_detail.save!
+
+        stock_expiry_dates = EpicsStockExpiryDates.new()
+        stock_expiry_dates.epics_stock_details_id = stock_detail.epics_stock_details_id
+        stock_expiry_dates.expiry_date = params[:record]['date'].to_date + 1.year
+        stock_expiry_dates.save!
+
+      end
 
       result = "Record Saved Successfully"
 
@@ -65,23 +70,25 @@ class ProductController < ApplicationController
         result = "Insufficient quantity to issue"
       else
 
-        order_type = EpicsOrderTypes.find_by_name('Dispense')
+        order_type = EpicsOrderTypes.find_by_name(params[:record]["transaction"])
 
-        order = EpicsOrders.new()
-        order.epics_order_type_id = order_type.id
-        order.epics_location_id = EpicsLocation.find_by_name(params[:record]['interactor'])
-        order.created_at = created_at
-        order.save
+        EpicsOrders.transaction do
+          order = EpicsOrders.new()
+          order.epics_order_type_id = order_type.id
+          order.epics_location_id = EpicsLocation.find_by_name(params[:record]['interactor'])
+          order.created_at = created_at
+          order.save
 
-        item_order = EpicsProductOrders.new()
-        item_order.epics_order_id = order.id
-        item_order.epics_stock_details_id = stock.id
-        item_order.quantity = params[:record]['issued']
-        item_order.created_at = "#{order.created_at.to_date} #{Time.now.strftime('%H:%M:%S')}"
-        item_order.save
+          item_order = EpicsProductOrders.new()
+          item_order.epics_order_id = order.id
+          item_order.epics_stock_details_id = stock.id
+          item_order.quantity = params[:record]['issued']
+          item_order.created_at = "#{order.created_at.to_date} #{Time.now.strftime('%H:%M:%S')}"
+          item_order.save
 
-        stock.current_quantity = (stock.current_quantity - params[:record]['issued'].to_i)
-        stock.save
+          stock.current_quantity = (stock.current_quantity - params[:record]['issued'].to_i)
+          stock.save
+        end
 
         result = "Record Saved Successfully"
       end
