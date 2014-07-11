@@ -10,8 +10,10 @@ class ProductController < ApplicationController
   def data_entry
 
     types = ['facility', 'Store room', 'Departments']
+    facility_id = EpicsLocationType.find_by_name("facility").id
     location_type = EpicsLocationType.where("name in (?)", types).collect{|c| c.id}
     @receivers = EpicsLocation.where("epics_location_type_id in (?)",location_type).collect{|x| x.name}
+    @facilities = EpicsLocation.where("epics_location_type_id = ?",facility_id).collect{|x| x.name}
     @receivers.delete(session[:location_name])
     @suppliers = EpicsSupplier.all.collect{|x| x.name}
     @product = EpicsProduct.find_by_name(params[:product])
@@ -20,13 +22,73 @@ class ProductController < ApplicationController
 
   def save_transaction
 
-    if params[:record]['issued'].blank?
+    created_at = "#{params[:record]['date'].to_date} #{Time.now.strftime('%H:%M:%S')}" rescue nil
+
+    if (params[:record]['isReceipt'].downcase == "true")
+
+      product = EpicsProduct.find_by_name(params[:record]['item'])
+
+      stock = EpicsStock.new()
+      stock.grn_date = params[:record]['date']
+      stock.invoice_number = params[:record]['voucher']
+      stock.epics_supplier_id = EpicsSupplier.find_by_name(params[:record]['interactor']).id
+      stock.save!
+
+      witness = EpicsWitnessNames.new
+      witness.epics_stock_id = stock.epics_stock_id
+      witness.name = "Administrator"
+      witness.save!
+
+      stock_detail = EpicsStockDetails.new()
+      stock_detail.epics_stock_id = stock.epics_stock_id
+      stock_detail.epics_products_id = product.id
+      stock_detail.epics_location_id = session[:location_id]
+      stock_detail.received_quantity = params[:record]['received']
+      stock_detail.current_quantity = params[:record]['received']
+      stock_detail.batch_number = params[:record]['batch']
+      stock_detail.epics_product_units_id = product.epics_product_units_id
+      stock_detail.save!
+
+      stock_expiry_dates = EpicsStockExpiryDates.new()
+      stock_expiry_dates.epics_stock_details_id = stock_detail.epics_stock_details_id
+      stock_expiry_dates.expiry_date = params[:record]['date'].to_date + 1.year
+      stock_expiry_dates.save!
+
+      result = "Record Saved Successfully"
 
     else
 
+      stock = EpicsStockDetails.find(:first,:conditions =>["batch_number = ? and current_quantity >= ?",
+                                                           params[:record]['batch'],params[:record]['issued']])
+
+      if (stock.blank?)
+        result = "Insufficient quantity to issue"
+      else
+
+        order_type = EpicsOrderTypes.find_by_name('Dispense')
+
+        order = EpicsOrders.new()
+        order.epics_order_type_id = order_type.id
+        order.epics_location_id = EpicsLocation.find_by_name(params[:record]['interactor'])
+        order.created_at = created_at
+        order.save
+
+        item_order = EpicsProductOrders.new()
+        item_order.epics_order_id = order.id
+        item_order.epics_stock_details_id = stock.id
+        item_order.quantity = params[:record]['issued']
+        item_order.created_at = "#{order.created_at.to_date} #{Time.now.strftime('%H:%M:%S')}"
+        item_order.save
+
+        stock.current_quantity = (stock.current_quantity - params[:record]['issued'].to_i)
+        stock.save
+
+        result = "Record Saved Successfully"
+      end
+
     end
 
-    render :text => true
+    render :text => result
   end
 
   def find_by_name_or_code

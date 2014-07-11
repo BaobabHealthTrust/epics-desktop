@@ -15,6 +15,14 @@
     range_end = new Date(today.getFullYear(),today.getMonth(),5);
     restrictFuture = 1
 
+    var facilities = []
+    var current_row = ""
+    var current_row_type = ""
+
+    <% (@facilities || []).each do |facility| %>
+        facilities.push("<%= facility %>")
+    <% end %>
+
     function saveRecord(id_long){
 
         var id = id_long.replace('Save', '')
@@ -25,30 +33,94 @@
         var quan_issued = document.getElementById(id+"QuaIss").value;
         var sup_rec = document.getElementById(id+"SupRec").value;
 
-        if (verify_record(date, voucher,batch, quan_recieved,quan_issued, sup_rec))
+
+
+        var isReciept = true
+
+        if (document.getElementById(id+"Vouc").disabled)
         {
+            isReciept = false
+        }
+
+        if (verify_record(date, voucher,batch, quan_recieved,quan_issued, sup_rec, isReciept))
+        {
+
             var data = "record[date]=" + date;
             data += "&record[voucher]=" + voucher;
             data += "&record[batch]=" + batch;
-            data += "&record[recieved]=" + quan_recieved;
+            data += "&record[received]=" + quan_recieved;
             data += "&record[issued]=" + quan_issued;
             data += "&record[interactor]=" + sup_rec;
+            data += "&record[isReceipt]=" + isReciept;
             data += "&record[item]=" + "<%= @product.name %>";
 
-            jQuery.ajax({
-                type: "POST",
-                url: "/product/save_transaction",
-                data: data,
-                success: function(){
-                    jAlert("Record added successfully", "Success")
-                    freeze_row(id)
+            if (facilities.member(sup_rec))
+            {
+                current_row = id_long
+                current_row_type = isReciept
+                showPopup()
+            }
+            else
+            {
+                if (isReciept == "false")
+                {
+                    data += "&record[transaction]=" + "dispense"
+                }
+                else
+                {
+                    data += "&record[transaction]=" + "receipt"
+                }
+                post_record(data, id_long)
+            }
+
+        }
+
+    }
+
+    function set_transaction_type(type)
+    {
+        var id = current_row.replace('Save', '')
+
+        var data = "record[date]=" + document.getElementById(id+"Date").value;
+        data += "&record[voucher]=" + document.getElementById(id+"Vouc").value;
+        data += "&record[batch]=" + document.getElementById(id+"Batch").value;
+        data += "&record[received]=" + document.getElementById(id+"QuaRec").value;
+        data += "&record[issued]=" + document.getElementById(id+"QuaIss").value;
+        data += "&record[interactor]=" + document.getElementById(id+"SupRec").value;
+        data += "&record[isReceipt]=" + current_row_type;
+        data += "&record[item]=" + "<%= @product.name %>";
+        data += "&record[type]=" + type;
+        post_record(data,current_row)
+        current_row = ""
+        current_row_type = ""
+        hidePopups()
+    }
+
+    function post_record(data, id_long)
+    {
+        jQuery.ajax({
+            type: "POST",
+            url: "/product/save_transaction",
+            data: data,
+            success: function(msg){
+                if (msg == "Record Saved Successfully")
+                {
+                    jAlert(msg, "Success!")
+                    freeze_row(id_long)
                     add_row()
                     document.getElementById(id_long).style.display ='none'
                 }
+                else
+                {
+                    jAlert(msg, "Unsuccessful")
+                }
 
-            });
-        }
+            },
+            error: function(){
+                jAlert("Could not create record", "Unsuccessful")
+            }
 
+        });
     }
 
     function activate_next(next_id)
@@ -71,7 +143,13 @@
             option.title = "<%= supplier %>";
             drop_down.add(option);
             <% end %>
-
+            <% (@facilities || [] ).each do |facility| %>
+            var option = document.createElement("option");
+            option.text = "<%= facility %>";
+            option.value = "<%= facility %>";
+            option.title = "<%= facility %>";
+            drop_down.add(option);
+            <% end %>
         }
         else
         {
@@ -88,30 +166,21 @@
         }
     }
 
-    function clear_text(id, list)
+    function clear_text(id_long)
     {
-        var self_control = document.getElementById(id)
-        document.getElementById(list).disabled = true
+        var id = id_long.slice(0, -1);
+        document.getElementById(id+"QuaRec").disabled = true;
+        document.getElementById(id+"QuaIss").disabled = true;
+        document.getElementById(id+"SupRec").disabled = true;
+        document.getElementById(id+"Batch").disabled = false;
+        document.getElementById(id+"Vouc").disabled = true;
+        document.getElementById(id+"QuaRec").value = ""
+        document.getElementById(id+"QuaIss").value = ""
+        document.getElementById(id+"Vouc").value = "";
 
-        if(!self_control.disabled)
-        {
-            if (id.search('QuaRec') != -1)
-            {
-                var control = document.getElementById(id.toString().replace('QuaRec','QuaIss'))
-                document.getElementById(id.toString().replace('QuaRec','Batch')).disabled = true
-                self_control.disabled = true
-                control.disabled = false
-            }
-            else
-            {
-                var control = document.getElementById(id.toString().replace('QuaIss','Vouc'))
-                control.disabled = false
-            }
-            self_control.value = ""
-        }
     }
 
-    function verify_record(date, voucher,batch, recieved, issued, sup_rec)
+    function verify_record(date, voucher,batch, recieved, issued, sup_rec, isReceipt)
     {
 
         if (!date || /^\s*$/.test(date))
@@ -119,24 +188,9 @@
             jAlert("Please provide transaction date", "Incomplete Information")
             return false ;
         }
-        else if (!voucher || /^\s*$/.test(voucher))
-        {
-            jAlert("Please provide voucher number", "Incomplete Information")
-            return false ;
-        }
         else if (!batch || /^\s*$/.test(batch))
         {
             jAlert("Please provide batch number", "Incomplete Information")
-            return false ;
-        }
-        else if ((!recieved || /^\s*$/.test(recieved)) && (!issued || /^\s*$/.test(issued)))
-        {
-            jAlert("Please provide quantity issued/received", "Incomplete Information")
-            return false ;
-        }
-        else if (recieved && issued)
-        {
-            jAlert("One transaction can not have both quantity issued and received", "Data Verification")
             return false ;
         }
         else if (!sup_rec || /^\s*$/.test(sup_rec))
@@ -144,25 +198,60 @@
             jAlert("Please provide details of Supplier/Receiving department", "Incomplete Information")
             return false ;
         }
-        else if (!(!recieved || /^\s*$/.test(recieved)))
+        else if (recieved && issued)
         {
-            if(!parseFloat(recieved))
-            {
-                jAlert("Quantity received should be a number", "Data Verification")
-                return false ;
-            }
-
-        }
-        else if (!(!issued || /^\s*$/.test(issued)))
-        {
-            if(!parseFloat(issued))
-            {
-                jAlert("Quantity issued should be a number", "Data Verification")
-                return false ;
-            }
+            jAlert("One transaction can not have both quantity issued and received", "Data Verification")
+            return false ;
         }
 
-        return true
+        if (isReceipt)
+        {
+            if (!voucher || /^\s*$/.test(voucher))
+            {
+                jAlert("Please provide voucher number", "Incomplete Information")
+                return false ;
+            }
+            else if (!recieved || /^\s*$/.test(recieved))
+            {
+                jAlert("Please provide quantity received", "Incomplete Information")
+                return false ;
+            }
+            else if (!(!recieved || /^\s*$/.test(recieved)))
+            {
+                if(!parseFloat(recieved))
+                {
+                    jAlert("Quantity received should be a number", "Data Verification")
+                    return false ;
+                }
+
+            }
+            else
+            {
+                return true
+            }
+        }
+        else
+        {
+            if (!issued || /^\s*$/.test(issued))
+            {
+                jAlert("Please provide quantity issued", "Incomplete Information")
+                return false ;
+            }
+            else if (!(!issued || /^\s*$/.test(issued)))
+            {
+                if(!parseFloat(issued))
+                {
+                    jAlert("Quantity issued should be a number", "Data Verification")
+                    return false ;
+                }
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        return true;
 
     }
 
@@ -179,8 +268,9 @@
                     type:"POST",
                     success: function(msg){
                         jAlert(msg, "Void Outcome")
-                        var table = document.getElementById("records")
-                        table.deleteRow(node.getAttribute("row_count"))
+                        var id = node.getAttribute("row_count")
+                        var row = document.getElementById(id)
+                        row.parentNode.removeChild(row)
                     },
                     error: function(){
                         jAlert("Record could not be voided", "Unsuccessful!");
@@ -193,59 +283,57 @@
 
     function add_row()
     {
-        var table = document.getElementById("records")
-        var row = document.createElement('tr')
+        var table = document.getElementById('records');
+        var new_row = table.insertRow(1);
+        var date_cell = new_row.insertCell()
+        var batch_cell = new_row.insertCell()
+        var voucher_cell = new_row.insertCell()
+        var received_cell = new_row.insertCell()
+        var issued_cell = new_row.insertCell()
+        var supRec_cell = new_row.insertCell()
+        var action_cell = new_row.insertCell()
         var id = 'tr'+table.rows.length
-        row.setAttribute('id', table.rows.length)
-        row.setAttribute('class', "tbody-data")
+        new_row.setAttribute('id', table.rows.length)
+        new_row.setAttribute('class', "tbody-data")
 
-        var date_cell = document.createElement("td")
         var date_input = document.createElement("input")
 
         date_input.setAttribute('type', 'text')
         date_input.setAttribute('name', id+'Date')
         date_input.setAttribute('id', id+'Date')
-        date_input.setAttribute('onClick', "GetDate(this);activate_next('"+id+"Vouc')")
+        date_input.setAttribute('onClick', "GetDate(this);clear_row(this.id)")
         date_cell.appendChild(date_input)
-        row.appendChild(date_cell)
 
-        var voucher_cell = document.createElement("td")
-        var voucher_input = document.createElement("input")
-
-        voucher_input.setAttribute("id", id+"Vouc")
-        voucher_input.setAttribute("type", "text")
-        voucher_input.setAttribute("oninput","activate_next('"+id+"Batch')" )
-        voucher_input.disabled = true
-        voucher_cell.appendChild(voucher_input)
-        row.appendChild(voucher_cell)
-
-
-        var batch_cell = document.createElement("td")
         var batch_input = document.createElement("input")
 
         batch_input.setAttribute("id", id+"Batch")
         batch_input.setAttribute("type", "text")
-        batch_input.setAttribute("oninput","activate_next('"+id+"QuaRec');activate_next('"+id+"QuaIss')")
+        batch_input.setAttribute("oninput","activate_next('"+id+"Vouc');activate_next('"+id+"QuaIss')")
         batch_input.disabled = true
         batch_cell.appendChild(batch_input)
-        row.appendChild(batch_cell)
 
-        var received_cell = document.createElement("td")
+        var voucher_input = document.createElement("input")
+
+        voucher_input.setAttribute("id", id+"Vouc")
+        voucher_input.setAttribute("type", "text")
+        voucher_input.setAttribute("oninput","activate_next('"+id+"QuaRec');deactivate_other(this.id,'"+id+"SupRec')" )
+        voucher_input.disabled = true
+        voucher_cell.appendChild(voucher_input)
+
         var received_input = document.createElement("input")
         var received_clear = document.createElement("img")
 
         received_input.setAttribute("id", id+"QuaRec")
         received_input.setAttribute("type", "text")
-        received_input.setAttribute("oninput","activate_next('"+id+"SupRec');deactivate_other(this.id,'"+id+"SupRec')")
+        received_input.setAttribute("oninput","activate_next('"+id+"SupRec')")
         received_input.disabled = true
+        received_clear.setAttribute('id', id+"A")
         received_clear.setAttribute('class', 'clear')
         received_clear.setAttribute('src', '/images/edit_clear.png')
-        received_clear.setAttribute('onClick', "clear_text('"+id + "QuaRec','"+ id +"SupRec')")
+        received_clear.setAttribute('onClick', "clear_text(this.id)")
         received_cell.appendChild(received_input)
         received_cell.appendChild(received_clear)
-        row.appendChild(received_cell)
 
-        var issued_cell = document.createElement("td")
         var issued_input = document.createElement("input")
         var issued_clear = document.createElement("img")
 
@@ -254,24 +342,19 @@
         issued_input.setAttribute("oninput","activate_next('"+id+"SupRec'); deactivate_other(this.id,'"+id+"SupRec')")
         issued_input.disabled = true
         issued_clear.setAttribute('class', 'clear')
+        issued_clear.setAttribute('id', id+"B")
         issued_clear.setAttribute('src', '/images/edit_clear.png')
-        issued_clear.setAttribute('onClick', "clear_text('"+id + "QuaIss','"+ id +"SupRec')")
+        issued_clear.setAttribute('onClick', "clear_text(this.id)")
         issued_cell.appendChild(issued_input)
         issued_cell.appendChild(issued_clear)
-        row.appendChild(issued_cell)
 
-        var supRec_cell = document.createElement("td")
         var supRec_input = document.createElement("select")
 
         supRec_input.setAttribute("id", id+"SupRec")
         supRec_input.setAttribute("type", 'text')
         supRec_input.setAttribute("class", 'options')
-        supRec_input.setAttribute("oninput","activate_next('"+id+"QuaRec');activate_next('"+id+"QuaIss')")
         supRec_input.disabled = true
         supRec_cell.appendChild(supRec_input)
-        row.appendChild(supRec_cell)
-
-        var action_cell = document.createElement("td")
 
         var remove_button = document.createElement("img")
         remove_button.setAttribute('id', id+'Delete')
@@ -288,20 +371,61 @@
         save_button.style.height = "50px"
         action_cell.appendChild(save_button)
 
-        row.appendChild(action_cell)
-        table.appendChild(row)
+
     }
 
-    function freeze_row(id)
+    function freeze_row(id_long)
     {
+
+        var id = id_long.replace('Save', '')
         document.getElementById(id+"Date").disabled = true;
         document.getElementById(id+"Vouc").disabled = true;
         document.getElementById(id+"Batch").disabled = true;
         document.getElementById(id+"QuaRec").disabled = true;
         document.getElementById(id+"QuaIss").disabled = true;
         document.getElementById(id+"SupRec").disabled = true;
+        document.getElementById(id+'A').style.display = 'none'
+        document.getElementById(id+'B').style.display = 'none'
 
     }
+
+    function clear_row(element_id)
+    {
+        var id = element_id.replace("Date", "")
+
+        document.getElementById(id+"QuaRec").disabled = true;
+        document.getElementById(id+"QuaIss").disabled = true;
+        document.getElementById(id+"SupRec").disabled = true;
+        document.getElementById(id+"Batch").disabled = false;
+        document.getElementById(id+"Vouc").disabled = true;
+        document.getElementById(id+"QuaRec").value = ""
+        document.getElementById(id+"QuaIss").value = ""
+        document.getElementById(id+"Vouc").value = "";
+        document.getElementById(id+"Batch").value = "";
+    }
+    function showPopup(){
+        //current_stock_id = node.getAttribute('id')
+        if (current_row_type )
+        {
+            document.getElementById('donate').style.display='none'
+            document.getElementById('lend').style.display='none'
+            document.getElementById('borrow').style.display=''
+        }
+        else
+        {
+            document.getElementById('donate').style.display=''
+            document.getElementById('lend').style.display=''
+            document.getElementById('borrow').style.display='none'
+        }
+        document.getElementsByClassName('select_reason')[0].style.display=''
+        document.getElementById('cover').style.display=''
+    }
+
+    function hidePopups(){
+        document.getElementsByClassName('select_reason')[0].style.display='none'
+        document.getElementById('cover').style.display='none'
+    }
+
 -->
 </script>
 <style>
@@ -329,6 +453,37 @@
       width: 200px;
       font-size: 130%;
   }
+  .buttons{
+      border-bottom: 1px outset #EEEEEE;
+      border-style: outset;
+      border-top: 1px outset #EEEEEE;
+      color: white;
+      display: block;
+      padding: 14px;
+      text-align: center;
+      text-decoration: none;
+      box-shadow:inset 0px 1px 0px 0px #bbdaf7;
+      background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #79bbff), color-stop(1, #378de5) );
+      background:-moz-linear-gradient( center top, #79bbff 5%, #378de5 100% );
+      filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#79bbff', endColorstr='#378de5');
+      background-color:#79bbff;
+      -moz-border-radius:42px;
+      -webkit-border-radius:42px;
+      -moz-box-shadow:inset 0px 1px 0px 0px #bbdaf7;
+      -webkit-box-shadow:inset 0px 1px 0px 0px #bbdaf7;
+      border-radius:42px;
+      border:1px solid #84bbf3;
+      border-bottom-color: rgba(0, 0, 0, 0.25);
+      border-left-color-ltr-source: physical;
+      border-left-color-rtl-source: physical;
+      border-left-color-value: rgba(0, 0, 0, 0.1);
+      border-right-color-ltr-source: physical;
+      border-right-color-rtl-source: physical;
+      border-right-color-value: rgba(0, 0, 0, 0.1);
+      border-top-color: rgba(0, 0, 0, 0.1);
+      font-size: 1.3em;
+      font-weight:bold;
+  }
 </style>
 
 <div style = "width: 100%;">
@@ -338,8 +493,8 @@
     <thead>
         <tr style="background-color: #C1DAD6">
           <td class="sample">Transaction Date</td>
-          <td class="sample">Voucher To/From </td>
           <td class="sample">Batch No </td>
+          <td class="sample">Voucher To/From </td>
           <td class="sample">Quantity Received </td>
           <td class="sample">Quantity Issued </td>
           <td class="sample">Supplier/Receiver </td>
@@ -349,18 +504,17 @@
     <tbody>
         <tr id="1" class="tbody-data">
           <td >
-            <input id="tr1Date" type="text" name="SelectedDate" onClick="GetDate(this);
-                    activate_next('tr1Vouc');activate_next('tr1QuaIss')" />
+            <input id="tr1Date" type="text" name="SelectedDate" onClick="GetDate(this);clear_row(this.id);" />
           </td>
-          <td ><input id="tr1Vouc" disabled="disabled" type="text" oninput="activate_next('tr1Batch');deactivate_other(this.id,'tr1SupRec')"></td>
-          <td ><input id="tr1Batch" disabled="disabled"  type="text" oninput="activate_next('tr1QuaRec')"></td>
+          <td ><input id="tr1Batch" disabled="disabled"  type="text" oninput="activate_next('tr1Vouc');activate_next('tr1QuaIss')"></td>
+          <td ><input id="tr1Vouc" disabled="disabled" type="text" oninput="activate_next('tr1QuaRec');deactivate_other(this.id,'tr1SupRec')"></td>
           <td >
             <input id="tr1QuaRec" disabled="disabled" type="text" oninput="activate_next('tr1SupRec')">
-            <img class="clear" src="/images/edit_clear.png" onclick="clear_text('tr1QuaRec','tr1SupRec')">
+            <img id="tr1A" class="clear" src="/images/edit_clear.png" onclick="clear_text(this.id)">
           </td>
           <td >
             <input id="tr1QuaIss" disabled="disabled" type="text" oninput="activate_next('tr1SupRec');deactivate_other(this.id,'tr1SupRec')">
-            <img class="clear" src="/images/edit_clear.png" onclick="clear_text('tr1QuaIss', 'tr1SupRec')">
+            <img id="tr1B" class="clear" src="/images/edit_clear.png" onclick="clear_text(this.id)">
           </td>
           <td >
             <select class="options" id="tr1SupRec" disabled="disabled" type="text">
@@ -377,3 +531,80 @@
     </tbody>
   </table>
 </div>
+
+<div class="select_reason" style="display:none;">
+  <div id="reasons">
+    <table  width="100%" border=0.5 style = "border-radius:10px;">
+      <tr>
+        <th colspan="2">Select Transaction Type</th>
+      </tr>
+      <tr id="borrow">
+        <td colspan="2"><a class="buttons" onclick="set_transaction_type('Borrow');"><span>Borrow</span></a> </td>
+      </tr>
+      <tr>
+        <td><hr/></td>
+      </tr>
+      <tr >
+        <td colspan="2"><a class="buttons" onclick="set_transaction_type('Loan Repayment');"><span>Loan Repayment</span></a> </td>
+      </tr>
+      <tr>
+        <td><hr/></td>
+      </tr>
+      <tr>
+        <td cospan="2"><a class="buttons" onclick="set_transaction_type('Exchange');"><span>Exchange</span></a> </td>
+      </tr>
+      <tr>
+        <td cospan="2"><hr/></td>
+      </tr>
+      <tr id="donate">
+        <td colspan="2"><a class="buttons" onclick="set_transaction_type('Donate');"><span>Donate</span></a> </td>
+      </tr>
+      <tr>
+        <td><hr/></td>
+      </tr>
+      <tr id="lend">
+        <td colspan="2"><a class="buttons" onclick="set_transaction_type('Lend');"><span>Lend</span></a> </td>
+      </tr>
+      <tr>
+        <td colspan="2"><%= image_tag("close.png",:id=>"close", :onclick=>"hidePopups();") %></td>
+      </tr>
+    </table>
+  </div>
+</div>
+<div id="cover" style="display: none">
+
+</div>
+<style>
+    #close{
+        position: absolute;
+        height: 60px;
+        left: 45%;
+        padding-top: 10px;
+    }
+    #reasons table{
+        background-color:#FEF6E4;
+        color: black;
+        font-size: 18pt;
+        font-weight: bold;
+        left: 30%;
+        line-height: 35px;
+        position: absolute;
+        top: 152px;
+        width: 500px;
+        border: 1px solid black;
+        z-index: 999;
+        padding: 0px 20px 70px 20px;
+        -moz-user-select:none;
+    }
+    #cover{
+        position: absolute;
+        background-color: black;
+        width: 100%;
+        height: 100%;
+        left: 0%;
+        top: 0%;
+        z-index: 990;
+        opacity: 0.5;
+    }
+
+</style>
