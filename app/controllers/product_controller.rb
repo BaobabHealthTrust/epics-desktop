@@ -75,7 +75,7 @@ class ProductController < ApplicationController
         EpicsOrders.transaction do
           order = EpicsOrders.new()
           order.epics_order_type_id = order_type.id
-          order.epics_location_id = EpicsLocation.find_by_name(params[:record]['interactor'])
+          order.epics_location_id = EpicsLocation.find_by_name(params[:record]['interactor']).id
           order.created_at = created_at
           order.save
 
