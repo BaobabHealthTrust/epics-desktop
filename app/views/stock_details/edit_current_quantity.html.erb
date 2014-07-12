@@ -1,0 +1,35 @@
+<script type='text/javascript'>
+	tt_cancel_destination='/product/view/?product=<%=session[:product]%>'
+ 
+</script>
+
+<form action="board_off_stock" method="post">
+
+    <%= select_tag "stock_details[issue_quantity]", options_for_select([1000,500,100,50,10,'Other']),
+                   {:id => 'product_quantity',
+                    :field_type => 'alpha',
+                    :tt_onLoad => "document.getElementById('keyboard').style.display='none'",
+                    :allowFreeText => false,
+                    :helpText => 'Select unit of issue'} %>
+
+    <%= text_field_tag "stock_details[other_quantity]", nil,
+                       {:id => 'product_quan',
+                        :field_type => 'number',
+                        :tt_pageStyleClass => "KeyboardNumeric NumbersOnly",
+                        :min => 1,
+                        :condition => "$('product_quantity').value =='Other'",
+                        :helpText => 'Enter unit of issue'} %>
+
+    <%= text_field_tag "stock_details[item_quantity]", nil,
+                       {:id => 'item_quantity',
+                        :field_type => 'number',
+                        :tt_pageStyleClass => "KeyboardNumeric NumbersOnly",
+                        :min => 1,
+                        :helpText => 'Enter quantity of items'} %>
+
+
+	<%= hidden_field_tag("stock_id", params[:stock_id])%>
+	<%= hidden_field_tag("reason", params[:reason])%>
+    <%= submit_tag "Edit current quantity" %>
+
+</form>

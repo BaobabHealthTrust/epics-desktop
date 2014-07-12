@@ -1,0 +1,299 @@
+<html>
+  <head>
+    <script>
+      function addPrinterIcon(){
+        nav = document.getElementById('nav')
+        img = document.createElement('img')
+        img.src="/images/emblem_print.png"
+        img.id='printer'
+        img.onclick=function(){
+          printStockCard();
+        }
+        nav.appendChild(img)
+      }
+      window.setTimeout("addPrinterIcon();", 50)
+
+      function printStockCard(){
+
+        jQuery.ajax({
+          type: "POST",
+          url: "/product/print_stock_card",
+          data: "id=<%=  params[:id] %>",
+          success: function(){
+            
+          }
+
+        });
+      }
+
+      function confirm(transaction_id, name) {
+          document.getElementById('shadow').style.display = 'block';
+          document.getElementById('question').style.display = 'block';
+          document.getElementById('yes').setAttribute("onmousedown", "voidTransaction("+transaction_id+",'" + name +"')" );
+      }
+      function hide(){
+          document.getElementById('shadow').style.display = 'none';
+          document.getElementById('question').style.display = 'none';
+      }
+      function voidTransaction(transaction_id, name) {
+        var product_id = <%=@item.id%>;
+
+        if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari  
+          xmlhttp=new XMLHttpRequest();                                             
+        }else{// code for IE6, IE5                                                  
+          xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");                           
+        }                                                                           
+        xmlhttp.onreadystatechange=function() {                                     
+          if (xmlhttp.readyState==4 && xmlhttp.status==200) {                       
+            var results = xmlhttp.responseText;                                     
+            if(results == 'undefined' || results == '' || results == '"not validate"') {                           
+              return;                                                               
+            }else{                                                                  
+              hide();
+              location.reload();
+            }                                                                       
+          }                                                                         
+        }                                                   
+
+        url = "/stock_details/void_transaction?transaction_id=";
+        url += transaction_id + "&transaction=" + name + "&product_id=" + product_id;
+        xmlhttp.open("GET", url, true);
+        xmlhttp.send();
+
+      }
+
+    </script>
+
+    <style>
+     #printer{
+        height: 65px;
+        margin-left: 75%;
+        cursor: pointer;
+        float: left;
+      }
+     .tbody-header tr, td {
+     /*   border-right: solid 1px black; 
+        border-bottom: solid 1px black;
+        border-left: solid 1px black;
+        border-top: solid 1px black; */
+        padding-left: 10px;
+      }
+
+      .stock_card {
+        width: 100%;                                                                  
+        border-collapse: collapse;                                                    
+        margin-top: 10px;
+      }
+
+      .tbody-header td {
+        border-style: solid;
+        border-width: 1px;
+        font-weight:bold;
+      }
+
+      .tbody-data td {
+        border-style: solid;
+        border-width: 1px;
+      }
+
+      .row_blue td {
+        background-color: lightgrey;
+      }
+
+      .void-buttons {
+        width: 75px;
+        height: 75px;
+      }
+     #shadow, #question {
+         -moz-user-select: none;
+     }
+
+     div {
+         -moz-user-select: none;
+     }
+      div.confirmation{
+          background-color: #FF6347;
+          border: 2px solid #000000;
+          height: 25%;
+          left: 35%;
+          padding: 10px;
+          position: absolute;
+          text-align: center;
+          top: 20%;
+          display: none;
+          vertical-align: middle;
+          width: 30%;
+          z-index: 1001;
+          font-size: 35px;
+      }
+     button.btn {
+         -moz-box-shadow:inset 0px 1px 0px 0px #bbdaf7;
+         -webkit-box-shadow:inset 0px 1px 0px 0px #bbdaf7;
+         box-shadow:inset 0px 1px 0px 0px #bbdaf7;
+         background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #79bbff), color-stop(1, #378de5) );
+         background:-moz-linear-gradient( center top, #79bbff 5%, #378de5 100% );
+         filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#79bbff', endColorstr='#378de5');
+         background-color:#79bbff;
+         -moz-border-radius:42px;
+         -webkit-border-radius:42px;
+         border-radius:42px;
+         border:1px solid #84bbf3;
+         display:inline-block;
+         color:#ffffff;
+         font-family:arial;
+         font-size:30px;
+         font-weight:bold;
+         padding:6px 24px;
+         text-decoration:none;
+         text-shadow:1px 1px 0px #528ecc;
+         width: 120px;
+         text-align: center;
+     }.btn:hover {
+          background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #378de5), color-stop(1, #79bbff) );
+          background:-moz-linear-gradient( center top, #378de5 5%, #79bbff 100% );
+          filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#378de5', endColorstr='#79bbff');
+          background-color:#378de5;
+      }.btn:active {
+           position:relative;
+           top:1px;
+       }
+    </style>
+    <%= stylesheet_link_tag "disable_page" %>
+  </head>
+  <body>
+   <div style="overflow:auto; height:590px">
+    <table class="stock_card">
+      <thead>
+        <tr class="tbody-header">
+          <td style="padding-left: 10px;">Product name</td>
+          <td style="padding-left: 10px;font-weight: normal;"><%=@item.name%></td>
+          <%if User.current.epics_user_role.name == "Administrator"%>
+            <td colspan="68"></td>
+          <%else%>
+            <td colspan="67"></td>
+          <%end%>
+        </tr>
+        <tr class="tbody-header">
+          <td>CODE</td>
+          <td style="padding-left: 10px;font-weight: normal;"><%=@item.product_code%></td>
+          <td>Unit of issue</td>
+          <%if User.current.epics_user_role.name == "Administrator"%>
+            <td colspan="7" style="padding-left: 10px;font-weight: normal;"><%=@item.epics_product_units.name%></td>
+          <%else%>
+            <td colspan="6" style="padding-left: 10px;font-weight: normal;"><%=@item.epics_product_units.name%></td>
+          <%end%>
+        </tr>
+        <tr class="tbody-header">
+          <td>DATE<br />(A)</td>
+          <td>Voucher To/From<br />(B)</td>
+          <td>Quantity Received<br />(C)</td>
+          <td>Quantity Issued<br />(D)</td>
+          <td>Losses<br />(E)</td>
+          <td>+Adjust<br />(F)</td>
+          <td>-Adjust<br />(G)</td>
+          <td>Quantity on Hand<br />(H)</td>
+          <td>Remarks<br />(I)</td>
+          <%if User.current.epics_user_role.name == "Administrator"%>
+            <td>&nbsp;</td>
+          <%end%>
+        </tr>
+      </thead>
+      <tbody>
+
+      <tr class="tbody-data">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <%if User.current.epics_user_role.name == "Administrator"%>
+          <td>&nbsp;</td>
+        <%end%>
+      </tr>
+
+      <%
+      color = 'white'
+      total_positives = 0
+      total_negatives = 0
+      (@trail || {}).sort_by {|x , y| x.to_time }.each do |date , attributes| 
+          (attributes).each do |invoice_number , values|
+            (values).each do |batch_number , data|
+              (data).each do |remark , d|
+                if color == 'white'
+                  color = 'blue'
+                else
+                  color = 'white'
+                end
+                    
+                total_positives += d[:received_quantity].to_f if d[:received_quantity]
+                total_positives += d[:quantity_received].to_f if d[:quantity_received]
+
+                total_negatives += d[:issued].to_f if d[:issued]
+                total_negatives += d[:losses].to_f if d[:losses]
+                total_negatives += d[:quantity_given_out].to_f if d[:quantity_given_out]
+
+                current_quantity = (total_positives - total_negatives)
+
+                if(current_quantity.to_s[-2..-1] == '.0')
+                  current_quantity = current_quantity.to_i
+                end
+
+                transaction = d[:transaction].upcase
+                if transaction == 'BOARD OFF'
+                  transaction_id = d[:epics_product_order_id]
+                elsif transaction.match(/POSITIVE_ADJUSTMENTS:EXCHANGE/i)
+                  transaction_id = d[:epics_exchange_id]
+                elsif transaction.match(/POSITIVE_ADJUSTMENTS:BORROW/i)
+                  transaction_id = d[:epics_lends_or_borrows_id]
+                elsif transaction.match(/NEGATIVE_ADJUSTMENTS/i)
+                  transaction_id = d[:epics_product_order_id]
+                elsif transaction == 'RECEIPTS'
+                  transaction_id = d[:epics_stock_details_id]
+                elsif transaction == 'ISSUES'
+                  transaction_id = d[:epics_product_order_id]
+                end
+      %>
+      <tr class="tbody-data row_<%=color%>">
+        <td><%=date.to_date.strftime("%d-%b-%Y")%></td>
+        <td><%=invoice_number%></td>
+        <td><%=d[:received_quantity]%></td>
+        <td><%=d[:issued]%></td>
+        <td><%=d[:losses]%></td>
+        <td><%=d[:quantity_received]%></td>
+        <td><%=d[:quantity_given_out]%></td>
+        <td><%=current_quantity%></td>
+        <td><%=remark%></td>
+        <%if User.current.epics_user_role.name == "Administrator" && transaction == "ISSUES" %>
+          <td style="text-align: center; vertical-align: middle;">
+            <%= image_tag("close.png", :class => 'void-buttons', 
+              :onclick =>"confirm(#{transaction_id},'#{d[:transaction]}')") %>
+          </td>
+         <% elsif User.current.epics_user_role.name == "Administrator" %>
+            <td style="text-align: center; vertical-align: middle;">
+              &nbsp;
+            </td>
+        <%end%>
+      </tr>
+      
+          <%end
+          end
+        end
+      end %>
+      </tbody>
+    </table>
+  </div>
+   <div id="shadow" class="opaqueLayer"> </div>
+   <div id="question" class="confirmation" >
+       Are you sure you want to void this transaction?
+        <br><br>
+     <button class='btn' id='yes'>Yes</button> <button class='btn' onmousedown="hide()">No</button>
+   </div>
+   </div>
+
+  </body>
+</html>
+

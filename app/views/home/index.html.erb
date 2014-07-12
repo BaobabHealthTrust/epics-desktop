@@ -41,32 +41,6 @@
                   return document.getElementById(id);
               }
 
-      function switchTab(tab){
-          var tabs = ["application", "reports", "my_activities", "administration"];
-
-          for(var i = 0; i < tabs.length; i++){
-              __$(tabs[i]).style.borderBottom = "1px solid #5496ef";
-              __$(tabs[i]).style.paddingTop = "60px";
-          }
-
-          __$(tab).style.borderBottom = "5px solid #5496ef";
-          __$(tab).style.paddingTop = "65px";
-
-          switch(tab.toLowerCase()){
-              case "application":
-                  loadApplicationMenu();
-                  break;
-              case "reports":
-                  loadReportsMenu();
-                  break;
-              case "my_activities":
-                  loadActivitiesMenu();
-                  break;
-              case "administration":
-                  loadAdministrationMenu();
-                  break;
-          }
-      }
 
       function adjustView(){
       }
@@ -130,14 +104,7 @@
       //-->
 
       function switchToActiveTab(){
-          active_tab = readCookie('active-tab');
-          if (active_tab){
-              switchTab(active_tab)
-          }
-          else{
               loadApplicationMenu();
-          }
-
       }
   </script>
 </head>
@@ -149,21 +116,6 @@
             padding-top: 65px; width: 100px; cursor: pointer;" align="center"
         onclick="switchTab(this.id)">
       Application
-    </td>
-    <td id="reports" style="border-bottom: 1px solid #5496ef; font-size: 18px;
-            padding-top: 60px; width: 80px; cursor: pointer;" align="center"
-        onclick="switchTab(this.id)">
-      Reports
-    </td>
-    <td id="my_activities" style="border-bottom: 1px solid #5496ef; font-size: 18px;
-            padding-top: 60px; width: 110px; cursor: pointer;" align="center"
-        onclick="switchTab(this.id)">
-      My Activities
-    </td>
-    <td id="administration" style="border-bottom: 1px solid #5496ef; font-size: 18px;
-            padding-top: 60px; width: 130px; cursor: pointer;" align="center"
-        onclick="switchTab(this.id)">
-      Administration
     </td>
     <td style="border-bottom: 1px solid #5496ef;">
       &nbsp;

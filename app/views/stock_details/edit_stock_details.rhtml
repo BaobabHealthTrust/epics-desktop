@@ -1,0 +1,42 @@
+<script type='text/javascript'><!--
+
+	tt_cancel_destination='/product/view/?product=<%= session[:product] %>'
+
+//-->
+</script>
+
+<style>
+  #tt_page_enter_reason_for_editing .inputFrameClass{
+    height: 33%;
+  }
+</style>
+
+<%= form_tag :action => 'save_edited_stock_details', :method => :post  do %>
+
+  <%= select_tag "units[]",options_for_select([1000,500,100,50,10,'Other']),
+       {:id => 'units',
+       :tt_onLoad => "document.getElementById('keyboard').style.display='none'",
+       :helpText => 'Select Units of Issue'} %>
+
+  <%= text_field_tag "units[]", nil,
+       {:id => 'quantity',
+       :field_type => 'number',
+       :condition => "document.getElementById('units').value == 'Other'",
+       :tt_pageStyleClass => "Numeric NumbersOnly",
+       :helpText => 'Enter Units of Issue'} %>
+
+  <%= text_field_tag "quantity", nil,
+       {:id => 'quantity',
+       :field_type => 'number',
+       :tt_pageStyleClass => "Numeric NumbersOnly",
+       :helpText => 'Enter Quantity of items'} %>
+
+  <%= text_area_tag "reason", nil,
+       {:id => 'reason',
+       :field_type => 'alpha',
+       :helpText => 'Enter reason for editing'} %>
+
+  <%= submit_tag "Create Product" %>
+
+
+<% end %>

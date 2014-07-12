@@ -105,4 +105,13 @@ class ProductController < ApplicationController
 
     render :text => "<li></li><li>" + @products.join("</li><li>") + "</li>"
   end
+  def view
+    @product = EpicsProduct.where("name = ?",params[:product])[0]
+    if @product.blank?
+      redirect_to "/"
+    else
+      session[:product] = params[:product]
+      render :layout => "custom"
+    end
+  end
 end

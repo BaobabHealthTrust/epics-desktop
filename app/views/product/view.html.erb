@@ -1,0 +1,281 @@
+
+
+<script>
+  current_stock_id = ""
+  current_reason = ""
+  function voidNode(){
+
+    jQuery.ajax({
+      type: "POST",
+      url: "/product/void",
+      data: "product_id=<%=@product.id %>",
+      success: function(){
+        document.location.href="/"
+      }
+
+    });
+  }
+
+  function showPopup(node){
+    current_stock_id = node.getAttribute('id')
+    document.getElementsByClassName('select_reason')[0].style.display=''
+    document.getElementById('cover').style.display=''
+  }
+
+  function hidePopups(){
+    document.getElementsByClassName('select_reason')[0].style.display='none'
+    document.getElementById('cover').style.display='none'
+  }
+
+  function selectReason(node){
+    current_reason = node.getAttribute('reason');
+    window.location="/stock_details/edit_current_quantity?stock_id=" + current_stock_id + '&reason=' + current_reason
+    /*jQuery.ajax({
+      type: "POST",
+      url: "/stock_details/board_off_stock",
+      data: "stock_id=" + current_stock_id + '&reason=' + current_reason,
+      success: function(){
+        elements = document.getElementsByTagName("tr")
+        for(i=0; i<elements.length; i++){
+           if (elements[i].getAttribute('stock_id')){
+             if (elements[i].getAttribute('stock_id') == current_stock_id){
+               elements[i].parentNode.removeChild(elements[i]);
+               break;
+             }
+           }
+        }
+        current_stock_id = ""
+        current_reason = ""
+        hidePopups();
+      }
+
+    });*/
+    
+  }
+
+  function editStock(stockId){
+    window.location="/stock_details/edit_stock_details?stock_id=" + stockId
+  }
+</script>
+
+<style type="text/css">
+.product-table {
+  width: 100%;
+  text-align: left;
+}
+
+.product-table td {
+  border-style: solid;
+  border-width: 1px 0px 0px 0px;
+}
+
+.left-side {
+  float: left;
+  width: 75%;
+  overflow: auto;
+  height: 390px;
+}
+
+.right-side {
+  float: right;
+  width: 20%;
+}
+
+
+.menu-buttons {                                                               
+    padding: 10px;                                                              
+    float: right;                                                               
+    width: 30%;                                                                 
+    margin-right: 10px;                                                         
+    border-style: solid;                                                        
+    border-width: 0px 0px 0px 1px;                                              
+  }                                                                             
+                                                                                
+  .menu-buttons a {                                                             
+    width: 95%;                                                                 
+  }                                                                             
+                                                                                
+  .buttons{
+        border-bottom: 1px outset #EEEEEE;
+        border-style: outset;
+        border-top: 1px outset #EEEEEE;
+        color: white;
+        display: block;
+        padding: 14px;
+        text-align: center;
+        text-decoration: none;
+        box-shadow:inset 0px 1px 0px 0px #bbdaf7;
+        background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #79bbff), color-stop(1, #378de5) );
+        background:-moz-linear-gradient( center top, #79bbff 5%, #378de5 100% );
+        filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#79bbff', endColorstr='#378de5');
+        background-color:#79bbff;
+        -moz-border-radius:42px;
+        -webkit-border-radius:42px;
+        -moz-box-shadow:inset 0px 1px 0px 0px #bbdaf7;
+        -webkit-box-shadow:inset 0px 1px 0px 0px #bbdaf7;
+        border-radius:42px;
+        border:1px solid #84bbf3;
+        border-bottom-color: rgba(0, 0, 0, 0.25);
+        border-left-color-ltr-source: physical;
+        border-left-color-rtl-source: physical;
+        border-left-color-value: rgba(0, 0, 0, 0.1);
+        border-right-color-ltr-source: physical;
+        border-right-color-rtl-source: physical;
+        border-right-color-value: rgba(0, 0, 0, 0.1);
+        border-top-color: rgba(0, 0, 0, 0.1);
+        font-size: 1.3em;
+        font-weight:bold;                                                          
+  }       
+
+  .img{
+    height: 60px;
+   }
+</style>
+
+
+<h1><%=@product.product_code%>:&nbsp;<%=@product.name%></h1>
+<p><%=@product.epics_product_type.name%></p>
+<div class="product-container">
+
+<% cost = @product.epics_item_cost %>
+<b>&nbsp;Unit:</b>&nbsp;<%=@product.epics_product_units.name %>
+<b>&nbsp;Unit price:</b>&nbsp;<%=cost.unit_price rescue nil %>
+<b>&nbsp;Pack size:</b>&nbsp;<%=cost.pack_size rescue nil %>
+<b>&nbsp;Billing charge:</b>&nbsp;<%=cost.billing_charge rescue nil %>
+<hr />
+<br />
+
+<div class="left-side">
+  <table class="product-table">
+    <tr>
+      <th style="width: 15%;">Expiry date</th>
+      <th style="width: 20%; text-align: right;padding-right: 10px;">Received quantity</th>
+      <th style="width: 20%; text-align: right;padding-right: 10px;">Current quantity</th>
+      <th style="width: 25%;padding-left: 10px;">Location</th>
+      <th>&nbsp;</th>
+      <th>&nbsp;</th>
+    </tr>
+    <%(@product.epics_stock_details || []).each do |stock|%>
+      <tr stock_id="<%= stock.id %>">
+        <td><%=stock.epics_stock_expiry_date.expiry_date.strftime('%B %Y') rescue 'N/A'%></td>
+        <td style="text-align: right;padding-right: 10px;"><%=stock.received_quantity%></td>
+        <td style="text-align: right;padding-right: 10px;"><%=stock.current_quantity%></td>
+        <td style="padding-left: 10px;"><%=stock.epics_location.name%></td>
+        <% if stock.current_quantity == stock.received_quantity %>
+            <td style="width: 10%;"><%= image_tag("close.png",:id => stock.id, :class=>"img", :onclick=>"showPopup(this);") %></td>
+            <td style="width: 10%;"><%= image_tag("pencil.png",:id => stock.id, :class=>"img", :onclick=>"editStock(this.id)") %></td>
+        <% else %>
+            <td style="width: 10%;"> &nbsp;</td>
+            <td style="width: 10%;"> &nbsp;</td>
+        <% end %>
+      </tr>
+    <%end%>
+  </table>
+</div>
+
+<div class="right-side">
+  <table class="button-table" style="width: 99%;">
+    <tr>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td><%#= link_to "Stock card", {:action =>"stock_card",:id => @product.id}, :class => 'buttons' %></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td><%#= link_to "Set/Edit Cost", edit_cost_url(:id => @product.id), :class => 'buttons' %></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td><%#= link_to "Edit Item", edit_item_url(:id => @product.id), :class => 'buttons' %></td>
+    </tr>
+    <!--tr>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td><%#= link_to "Remove", "#", :class => 'buttons' ,:onclick=>"voidNode();"%></td>
+    </tr>-->
+  </table>
+</div>
+</div>
+
+<div class="select_reason" style="display:none;">
+  <div id="reasons">
+    <table  width="100%" border=0.5 style = "border-radius:10px;">
+      <tr>
+        <th colspan="2">Select Reason</th>
+      </tr>
+      <tr>
+        <td cospan="2"><a class="buttons" reason="expired" onclick="selectReason(this);"><span>Expired</span></a> </td>
+      </tr>
+      <tr>
+        <td cospan="2"><hr/></td>
+      </tr>
+      <tr>
+        <td colspan="2"><a class="buttons" reason="damaged" onclick="selectReason(this);"><span>Damaged</span></a> </td>
+      </tr>
+      <tr>
+        <td><hr/></td>
+      </tr>
+      <tr>
+        <td colspan="2"><a class="buttons" reason="missing" onclick="selectReason(this);"><span>Missing</span></a> </td>
+      </tr>
+      <tr>
+        <td><hr/></td>
+      </tr>
+      <tr>
+        <td colspan="2"><a class="buttons" reason="wrongly captured" onclick="selectReason(this);"><span>Wrongly captured</span></a> </td>
+      </tr>
+      <tr>
+        <td colspan="2"><%= image_tag("close.png",:id=>"close", :onclick=>"hidePopups();") %></td>
+      </tr>
+    </table>
+  </div>
+</div>
+<div id="cover" style="display: none">
+
+</div>
+<style>
+  #close{
+    position: absolute;
+    height: 60px;
+    left: 45%;
+    padding-top: 10px;
+  }
+  #reasons table{
+      background-color:#FEF6E4;
+      color: black;
+      font-size: 18pt;
+      font-weight: bold;
+      left: 30%;
+      line-height: 35px;
+      position: absolute;
+      top: 152px;
+      width: 500px;
+      border: 1px solid black;
+      z-index: 999;
+      padding: 0px 20px 70px 20px;
+      -moz-user-select:none;
+    }
+   #cover{
+      position: absolute;
+      background-color: black;
+      width: 100%;
+      height: 100%;
+      left: 0%;
+      top: 0%;
+      z-index: 990;
+      opacity: 0.5;
+    }
+
+</style>

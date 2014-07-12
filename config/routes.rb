@@ -1,5 +1,11 @@
 EpicsBdeTool::Application.routes.draw do
 
+  get "stock_details/edit_current_quantity"
+  post "stock_details/board_off_stock"
+  get "stock_details/edit_stock_details"
+  post "stock_details/save_edited_stock_details"
+  get "stock_details/void"
+
   get "stock_details_controller/void"
 
   get "product/search"
@@ -8,6 +14,11 @@ EpicsBdeTool::Application.routes.draw do
   get "product/data_entry"
   post "product/data_entry"
   post "product/save_transaction"
+  get "product/stock_card"
+  post "product/stock_card"
+  get "product/view"
+  post "product/view"
+
 
   get "home/index"
 
