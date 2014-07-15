@@ -271,15 +271,49 @@
         {
             if (r)
             {
-                var voucher = document.getElementById(node.id.replace("Delete", "Vouc")).value
+                var id = node.id.replace('Delete', '')
+                var isReciept = true
+
+                var data = "record[date]=" + document.getElementById(id+"Date").value;
+                data += "&record[batch]=" + document.getElementById(id+"Batch").value;
+                data += "&record[interactor]=" + document.getElementById(id+"SupRec").value;
+                data += "&record[item]=" + "<%= @product.name %>";
+
+                if (document.getElementById(id+"QuaRec").value == "")
+                {
+                    isReciept = false
+                    data += "&record[issued]=" + document.getElementById(id+"QuaIss").value;
+                }
+                else{
+                    data += "&record[voucher]=" + document.getElementById(id+ "Vouc").value;
+                    data += "&record[received]=" + document.getElementById(id+"QuaRec").value;
+                }
+
+                data += "&record[isReceipt]=" + isReciept;
+
                 jQuery.ajax({
-                    url:  "/stock_details/void?voucher=" + voucher ,
+                    url:  "/stock_details/void",
+                    data: data,
                     type:"POST",
                     success: function(msg){
-                        jAlert(msg, "Void Outcome")
-                        var id = node.getAttribute("row_count")
-                        var row = document.getElementById(id)
-                        row.parentNode.removeChild(row)
+
+                        if (msg == "Record successfully voided")
+                        {
+                            jAlert(msg, "Void Outcome")
+                            var id = node.getAttribute("row_count")
+                            var row = document.getElementById(id)
+                            row.parentNode.removeChild(row)
+
+                            if (document.getElementById('records').rows.length <= 1)
+                            {
+                                add_row()
+                            }
+                        }
+                        else {
+                            jAlert(msg, "Unsuccessful!");
+                        }
+
+
                     },
                     error: function(){
                         jAlert("Record could not be voided", "Unsuccessful!");

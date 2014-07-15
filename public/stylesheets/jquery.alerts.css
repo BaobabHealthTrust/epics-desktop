@@ -27,14 +27,14 @@
 }
 
 #popup_content {
-	background: 16px 16px no-repeat url('../images/info.gif');
+	background: 16px 16px no-repeat url('../images/info.png');
 	padding: 1em 1.75em;
 	margin: 0em;
     font-size: 18px;
 }
 
 #popup_content.alert {
-	background-image: url('../images/info.gif');
+	background-image: url('../images/info.png');
 }
 
 #popup_content.confirm {

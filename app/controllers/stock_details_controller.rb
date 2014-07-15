@@ -5,6 +5,61 @@ class StockDetailsController < ApplicationController
   end
 
   def void
+
+    product = EpicsProduct.find_by_name(params[:record]["item"])
+    date = params[:record]['date'].to_date.strftime('%Y-%m-%d')
+    if (params[:record]['isReceipt'].downcase == "true")
+
+      stock = EpicsStockDetails.find_by_sql("SELECT epics_stock_details.* FROM epics_stock_details INNER JOIN epics_stocks s
+                                      ON s.epics_stock_id = epics_stock_details.epics_stock_id
+                                      WHERE s.invoice_number ='#{params[:record]['voucher']}' AND s.grn_date = '#{date}'
+                                      AND epics_stock_details.batch_number = '#{params[:record]['batch']}'
+                                      AND epics_stock_details.received_quantity = #{params[:record]['received']}
+                                      AND epics_stock_details.epics_products_id = #{product.id}").first
+
+
+
+      if stock.current_quantity.to_i ==  params[:record]['received'].to_i
+
+        stock_expiry = stock.epics_stock_expiry_date
+
+        stock_expiry.voided = 1
+        stock_expiry.save
+
+        stock.voided = 1
+        stock.void_reason = "Wrongly captured"
+        stock.voided_by = User.current.id
+        stock.save
+
+        result = "Record successfully voided"
+
+      else
+
+        result = "Some items were issued from this batch. Please void the issues first"
+
+      end
+    else
+
+      product_order = EpicsProductOrders.find_by_sql("SELECT epics_product_orders.* FROM epics_product_orders INNER JOIN
+                                                epics_stock_details s ON s.epics_stock_details_id = epics_product_orders.epics_stock_details_id
+                                                WHERE s.batch_number = '#{params[:record]['batch']}' AND s.epics_products_id = #{product.id}
+                                                AND epics_product_orders.quantity = #{params[:record]['issued']}
+                                                AND DATE(epics_product_orders.created_at) = '#{date}'").first
+
+      stock_details = product_order.epics_stock_details
+
+      product_order.voided = 1
+      if product_order.save
+        stock_details.current_quantity += params[:record]['issued'].to_i
+        stock_details.save
+        result = "Record successfully voided"
+      else
+        result = "Record could not be voided"
+      end
+    end
+
+
+    render :text => result
   end
 
   def board_off_stock
