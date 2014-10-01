@@ -4,6 +4,7 @@ class ProductController < ApplicationController
   end
 
   def select
+    @action = params[:task]
     render :layout => "touch_screen"
   end
 
@@ -113,5 +114,17 @@ class ProductController < ApplicationController
       session[:product] = params[:product]
       render :layout => "custom"
     end
+  end
+  def stock_card
+    @item = EpicsProduct.find_by_name(params[:product])
+    @page_title = "#{@item.name}<br />Stock Card"
+    @trail = {}
+
+    EpicsReport.receipts(@item, @trail)
+    EpicsReport.issues(@item, @trail)
+    EpicsReport.negative_adjustments(@item, @trail)
+    EpicsReport.positive_adjustments(@item, @trail)
+    EpicsReport.losses(@item, @trail)
+
   end
 end

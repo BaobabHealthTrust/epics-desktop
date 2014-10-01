@@ -12,7 +12,7 @@
 
 </script>
 
-<% form_tag "data_entry", :method => :post do %>
+<% form_tag @action, :method => :post do %>
   <%= text_field_tag :product, nil, 
     {:field_type => 'alpha', 
      :helpText => 'Enter item name/item code to find',
