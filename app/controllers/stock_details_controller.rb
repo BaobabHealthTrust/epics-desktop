@@ -135,4 +135,56 @@ class StockDetailsController < ApplicationController
     end
     redirect_to :controller => "product", :action => "view", :product => session[:product]
   end
+
+  def void_transaction
+
+
+    transaction = params[:transaction].upcase
+    product_id = params[:product_id]
+
+    if transaction == 'BOARD OFF' || transaction == 'ISSUES'
+      transaction_id = params[:transaction_id]
+      revert_issue(transaction_id)
+    elsif transaction == 'NEGATIVE_ADJUSTMENTS:LEND' || transaction == 'NEGATIVE_ADJUSTMENTS:RETURN'
+      transaction_id = params[:transaction_id]
+      revert_issue(transaction_id)
+    elsif transaction.match(/POSITIVE_ADJUSTMENTS:EXCHANGE/i)
+      revert_positive_adjustments(params[:epics_stock_details_id], product_id, transaction)
+    elsif transaction.match(/POSITIVE_ADJUSTMENTS:BORROW/i)
+      revert_positive_adjustments(params[:epics_stock_details_id], product_id, transaction)
+    elsif transaction.match(/NEGATIVE_ADJUSTMENTS/i)
+      transaction_id = params[:epics_product_order_id]
+    elsif transaction == 'RECEIPTS'
+      transaction_id = params[:epics_stock_details_id]
+    end
+
+    render :text => "Reverted ....#{transaction_id}" and return
+  end
+
+  protected
+
+  # .........................................................................
+
+
+  def revert_issue(epics_product_order_id)
+
+    EpicsProductOrders.transaction do
+      epics_product_order = EpicsProductOrders.find(epics_product_order_id)
+      epics_product_order.voided = 1
+      quantity = epics_product_order.quantity
+      epics_order_id = epics_product_order.epics_order_id
+      epics_stock_details_id = epics_product_order.epics_stock_details_id
+      epics_product_order.save
+
+      epics_order = EpicsOrders.find(epics_order_id)
+      if epics_order.epics_product_orders.blank?
+        epics_order.voided = 1
+        epics_order.save
+      end
+
+      epics_stock_detail = EpicsStockDetails.find(epics_stock_details_id)
+      epics_stock_detail.current_quantity += quantity
+      epics_stock_detail.save
+    end
+  end
 end

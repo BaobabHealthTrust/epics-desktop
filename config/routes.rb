@@ -5,6 +5,7 @@ EpicsBdeTool::Application.routes.draw do
   get "stock_details/edit_stock_details"
   post "stock_details/save_edited_stock_details"
   post "stock_details/void"
+  get "stock_details/void_transaction"
 
   get "product/search"
   get "product/select"
