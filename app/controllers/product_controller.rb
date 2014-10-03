@@ -4,7 +4,7 @@ class ProductController < ApplicationController
   end
 
   def select
-    @action = params[:task]
+    @action = params[:task] rescue "data entry"
     render :layout => "touch_screen"
   end
 
@@ -27,7 +27,7 @@ class ProductController < ApplicationController
 
     if (params[:record]['isReceipt'].downcase == "true")
 
-      product = EpicsProduct.find_by_name(params[:record]['item'])
+      product = EpicsProduct.find_by_product_code(params[:record]['item'])
 
       supplier =  (params[:record]['transaction'] != "receipt") ? "Other" : params[:record]['interactor']
 

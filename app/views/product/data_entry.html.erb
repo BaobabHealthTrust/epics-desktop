@@ -52,7 +52,7 @@
             data += "&record[issued]=" + quan_issued;
             data += "&record[interactor]=" + sup_rec;
             data += "&record[isReceipt]=" + isReciept;
-            data += "&record[item]=" + "<%= @product.name %>";
+            data += "&record[item]=" + "<%= @product.product_code %>";
 
             if (facilities.member(sup_rec))
             {
@@ -98,7 +98,7 @@
         data += "&record[issued]=" + document.getElementById(id+"QuaIss").value;
         data += "&record[interactor]=" + document.getElementById(id+"SupRec").value;
         data += "&record[isReceipt]=" + current_row_type;
-        data += "&record[item]=" + "<%= @product.name %>";
+        data += "&record[item]=" + "<%= @product.product_code %>";
         data += "&record[transaction]=" + type;
         post_record(data,current_row)
         current_row = ""
