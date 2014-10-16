@@ -24,10 +24,9 @@ class ProductController < ApplicationController
   def save_transaction
 
     created_at = "#{params[:record]['date'].to_date} #{Time.now.strftime('%H:%M:%S')}" rescue nil
+    product = EpicsProduct.find_by_product_code(params[:record]['item'])
 
     if (params[:record]['isReceipt'].downcase == "true")
-
-      product = EpicsProduct.find_by_product_code(params[:record]['item'])
 
       supplier =  (params[:record]['transaction'] != "receipt") ? "Other" : params[:record]['interactor']
 
@@ -64,8 +63,8 @@ class ProductController < ApplicationController
 
     else
 
-      stock = EpicsStockDetails.find(:first,:conditions =>["batch_number = ? and current_quantity >= ?",
-                                                           params[:record]['batch'],params[:record]['issued']])
+      stock = EpicsStockDetails.find(:first,:conditions =>["batch_number = ? and current_quantity >= ? and epics_products_id = ?",
+                                                           params[:record]['batch'],params[:record]['issued'],product.id ])
 
       if (stock.blank?)
         result = "Insufficient quantity to issue"
